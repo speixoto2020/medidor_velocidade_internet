@@ -4,33 +4,33 @@
     --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     --success-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-    
+
     --bg-dark: #0a0e27;
     --bg-card: rgba(255, 255, 255, 0.05);
     --bg-glass: rgba(255, 255, 255, 0.1);
-    
+
     --text-primary: #ffffff;
     --text-secondary: #a0aec0;
     --text-muted: #718096;
-    
+
     --accent-purple: #667eea;
     --accent-pink: #f093fb;
     --accent-cyan: #00f2fe;
     --accent-green: #43e97b;
-    
+
     /* Spacing */
     --spacing-xs: 0.5rem;
     --spacing-sm: 1rem;
     --spacing-md: 1.5rem;
     --spacing-lg: 2rem;
     --spacing-xl: 3rem;
-    
+
     /* Border Radius */
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 20px;
     --radius-xl: 30px;
-    
+
     /* Transitions */
     --transition-fast: 0.2s ease;
     --transition-normal: 0.3s ease;
@@ -61,15 +61,22 @@ body::before {
     width: 100%;
     height: 100%;
     background: radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(240, 147, 251, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(0, 242, 254, 0.1) 0%, transparent 50%);
+        radial-gradient(circle at 80% 80%, rgba(240, 147, 251, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 20%, rgba(0, 242, 254, 0.1) 0%, transparent 50%);
     animation: backgroundShift 20s ease infinite;
     z-index: -1;
 }
 
 @keyframes backgroundShift {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
 }
 
 /* Ad Containers */
@@ -100,7 +107,8 @@ body::before {
 }
 
 .ad-sidebar {
-    display: none; /* Hidden on mobile */
+    display: none;
+    /* Hidden on mobile */
     width: 160px;
     flex-shrink: 0;
 }
@@ -113,7 +121,7 @@ body::before {
 .main-container {
     display: flex;
     gap: var(--spacing-lg);
-    max-width: 1400px;
+    max-width: 1100px;
     margin: 0 auto;
     padding: var(--spacing-md);
 }
@@ -317,8 +325,15 @@ body::before {
 }
 
 @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.02); }
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
 }
 
 /* Progress Bar */
@@ -450,6 +465,26 @@ body::before {
 .modal-header h2 {
     font-family: 'Outfit', sans-serif;
     font-size: 1.5rem;
+}
+
+.btn-icon-only {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    color: var(--text-primary);
+}
+
+.btn-icon-only:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
 }
 
 .btn-close {
@@ -592,8 +627,13 @@ body::before {
 
 /* Animations */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes fadeInDown {
@@ -601,6 +641,7 @@ body::before {
         opacity: 0;
         transform: translateY(-20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -612,6 +653,7 @@ body::before {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -623,6 +665,7 @@ body::before {
         opacity: 0;
         transform: scale(0.9);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -640,28 +683,28 @@ body::before {
     .app-header h1 {
         font-size: 2rem;
     }
-    
+
     .speed-test-card {
         padding: var(--spacing-md);
     }
-    
+
     .metrics-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .gauge {
         width: 220px;
     }
-    
+
     .history-item {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .ad-top {
         height: auto;
         min-height: 50px;
     }
-    
+
     .ad-placeholder {
         font-size: 0.75rem;
     }
@@ -671,15 +714,15 @@ body::before {
     .main-container {
         padding: var(--spacing-sm);
     }
-    
+
     .app-header h1 {
         font-size: 1.75rem;
     }
-    
+
     .subtitle {
         font-size: 1rem;
     }
-    
+
     .modal-content {
         width: 95%;
     }

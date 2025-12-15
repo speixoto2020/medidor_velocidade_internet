@@ -39,19 +39,24 @@
             <header class="app-header">
                 <h1>Medidor de Velocidade</h1>
                 <p class="subtitle">Teste sua conexão com precisão</p>
+                <button id="btn-screenshot" class="btn-icon-only" title="Capturar Resultado"
+                    style="display: none; position: absolute; top: 20px; right: 20px;">
+                    📸
+                </button>
             </header>
 
             <!-- Speed Test Card -->
             <section class="speed-test-card">
                 <!-- Server Info -->
-                <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke-width="12"
-                    stroke-linecap="round" />
-                <!-- Progress arc -->
-                <path class="gauge-progress" id="gauge-progress" d="M 20 100 A 80 80 0 0 1 180 100" fill="none"
-                    stroke-width="12" stroke-linecap="round" />
-                <!-- Center text -->
-                <text x="100" y="70" class="gauge-value" id="gauge-value">0</text>
-                <text x="100" y="90" class="gauge-unit">Mbps</text>
+                <svg class="gauge" viewBox="0 0 200 120" id="speed-gauge">
+                    <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke-width="12"
+                        stroke-linecap="round" />
+                    <!-- Progress arc -->
+                    <path class="gauge-progress" id="gauge-progress" d="M 20 100 A 80 80 0 0 1 180 100" fill="none"
+                        stroke-width="12" stroke-linecap="round" />
+                    <!-- Center text -->
+                    <text x="100" y="70" class="gauge-value" id="gauge-value">0</text>
+                    <text x="100" y="90" class="gauge-unit">Mbps</text>
                 </svg>
                 <div class="gauge-label" id="gauge-label">Pronto para testar</div>
     </div>
