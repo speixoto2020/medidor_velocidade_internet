@@ -6,9 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Medidor de velocidade de internet premium com servidores customizáveis">
     <meta name="keywords" content="velocidade internet, speed test, teste velocidade">
-    <title>Medidor de Velocidade - Speed Test Premium</title>
+    <title>NossaConexão - Speed Test Premium</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="screenshot.css">
+    <link rel="icon" type="image/png" href="logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -28,7 +29,7 @@
 
     <div class="main-container">
         <!-- Sidebar Ad Area -->
-        <aside class="ad-sidebar" id="ad-sidebar">
+        <aside class="ad-sidebar ad-left" id="ad-sidebar">
             <div class="ad-placeholder ad-vertical">
                 <span>Espaço para Anúncio 160x600</span>
             </div>
@@ -37,17 +38,49 @@
         <!-- Main Content -->
         <main class="content-wrapper">
             <header class="app-header">
-                <h1>Medidor de Velocidade</h1>
+                <div class="logo-container"
+                    style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px;">
+                    <img src="logo.png" alt="NossaConexão Logo" style="height: 60px;">
+                    <h1>NossaConexão</h1>
+                </div>
                 <p class="subtitle">Teste sua conexão com precisão</p>
-                <button id="btn-screenshot" class="btn-icon-only" title="Capturar Resultado"
-                    style="position: absolute; top: 0; right: 0;">
-                    📸
-                </button>
             </header>
 
             <!-- Speed Test Card -->
             <section class="speed-test-card">
                 <!-- Server Info -->
+                <div class="server-info">
+                    <div class="server-label">
+                        <span class="icon">🌐</span>
+                        <span id="current-server-name">Automático</span>
+                    </div>
+
+                    <!-- Server Actions (Config + Screenshot) -->
+                    <div class="server-actions"
+                        style="display: flex; flex-direction: column; gap: 10px; align-items: center; position: relative;">
+                        <button class="btn-config" id="btn-server-config" title="Configurar Servidores">
+                            ⚙️
+                        </button>
+
+                        <div class="screenshot-container">
+                            <button id="btn-screenshot" class="btn-icon-only" title="Opções de Captura">
+                                📷
+                            </button>
+                            <!-- Dropdown Menu -->
+                            <div class="screenshot-menu" id="screenshot-menu">
+                                <button class="menu-item" id="menu-capture">
+                                    <span class="icon">📋</span>
+                                    <span>Capturar (Copiar)</span>
+                                </button>
+                                <button class="menu-item" id="menu-save">
+                                    <span class="icon">💾</span>
+                                    <span>Salvar Captura</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <svg class="gauge" viewBox="0 0 200 120" id="speed-gauge">
                     <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke-width="12"
                         stroke-linecap="round" />
@@ -59,56 +92,56 @@
                     <text x="100" y="90" class="gauge-unit">Mbps</text>
                 </svg>
                 <div class="gauge-label" id="gauge-label">Pronto para testar</div>
-    </div>
 
-    <!-- Metrics Grid -->
-    <div class="metrics-grid">
-        <div class="metric-item">
-            <div class="metric-icon">📥</div>
-            <div class="metric-content">
-                <div class="metric-label">Download</div>
-                <div class="metric-value" id="download-speed">-- Mbps</div>
-            </div>
-        </div>
-        <div class="metric-item">
-            <div class="metric-icon">📤</div>
-            <div class="metric-content">
-                <div class="metric-label">Upload</div>
-                <div class="metric-value" id="upload-speed">-- Mbps</div>
-            </div>
-        </div>
-        <div class="metric-item">
-            <div class="metric-icon">⚡</div>
-            <div class="metric-content">
-                <div class="metric-label">Ping</div>
-                <div class="metric-value" id="ping-value">-- ms</div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Test Button -->
-    <button class="btn-test" id="btn-start-test">
-        <span class="btn-text">Iniciar Teste</span>
-        <span class="btn-icon">▶️</span>
-    </button>
+                <!-- Metrics Grid -->
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-icon">📥</div>
+                        <div class="metric-content">
+                            <div class="metric-label">Download</div>
+                            <div class="metric-value" id="download-speed">-- Mbps</div>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-icon">📤</div>
+                        <div class="metric-content">
+                            <div class="metric-label">Upload</div>
+                            <div class="metric-value" id="upload-speed">-- Mbps</div>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-icon">⚡</div>
+                        <div class="metric-content">
+                            <div class="metric-label">Ping</div>
+                            <div class="metric-value" id="ping-value">-- ms</div>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Progress Bar -->
-    <div class="progress-container" id="progress-container">
-        <div class="progress-bar" id="progress-bar"></div>
-    </div>
-    </section>
+                <!-- Test Button -->
+                <button class="btn-test" id="btn-start-test">
+                    <span class="btn-text">Iniciar Teste</span>
+                    <span class="btn-icon">▶️</span>
+                </button>
 
-    <!-- Results History -->
-    <section class="history-section" id="history-section">
-        <h2 class="section-title">Histórico de Testes</h2>
-        <div class="history-list" id="history-list">
-            <div class="empty-state">
-                <span class="empty-icon">📊</span>
-                <p>Nenhum teste realizado ainda</p>
-            </div>
-        </div>
-    </section>
-    </main>
+                <!-- Progress Bar -->
+                <div class="progress-container" id="progress-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+            </section>
+
+            <!-- Results History -->
+            <section class="history-section" id="history-section">
+                <h2 class="section-title">Histórico de Testes</h2>
+                <div class="history-list" id="history-list">
+                    <div class="empty-state">
+                        <span class="empty-icon">📊</span>
+                        <p>Nenhum teste realizado ainda</p>
+                    </div>
+                </div>
+            </section>
+        </main>
     </div>
 
     <!-- Server Configuration Modal -->
@@ -148,10 +181,35 @@
                 </div>
             </div>
         </div>
-    </div>
+        <!-- Screenshot Result Modal -->
+        <div class="modal-overlay" id="result-modal" style="z-index: 2000;">
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h2>📸 Resultado</h2>
+                    <button class="btn-close" id="btn-close-result">✕</button>
+                </div>
+                <div class="modal-body" style="text-align: center;">
+                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">Imagem gerada com sucesso!</p>
+                    <img id="result-image"
+                        style="max-width: 100%; border-radius: 8px; margin-bottom: 1.5rem; border: 2px solid rgba(255,255,255,0.1);"
+                        src="" alt="Resultado">
 
-    <script src="supabase-config.js"></script>
-    <script src="script.js"></script>
+                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn-add" id="btn-download-result"
+                            style="display: flex; align-items: center; gap: 8px;">
+                            ⬇️ Salvar Imagem
+                        </button>
+                        <button class="btn-config" id="btn-copy-result"
+                            style="display: flex; align-items: center; gap: 8px;">
+                            📋 Copiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="supabase-config.js"></script>
+        <script src="script.js"></script>
 </body>
 
 </html>

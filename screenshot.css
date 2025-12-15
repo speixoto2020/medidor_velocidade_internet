@@ -1,6 +1,18 @@
-/* Screenshot Button Styles */
+/* Screenshot Button Styles - Matching .btn-config */
 #btn-screenshot {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    /* var(--radius-md) approx */
+    padding: 8px 12px;
+    /* var(--spacing-xs) var(--spacing-sm) approx */
+    font-size: 1.25rem;
+    cursor: pointer;
     transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
 }
 
 #btn-screenshot:hover {
@@ -50,4 +62,59 @@
 
 .toast.show {
     transform: translateX(-50%) translateY(0);
+}
+
+/* Screenshot Dropdown Menu */
+.screenshot-container {
+    position: relative;
+    /* Changed from absolute */
+}
+
+.screenshot-menu {
+    position: absolute;
+    top: 0;
+    right: 110%;
+    /* Show to the left of the button to avoid overflow or crowding */
+    min-width: 180px;
+    background: #1a1a2e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 8px;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.2s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 101;
+}
+
+.screenshot-menu.active {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    color: white;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.2s;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+}
+
+.menu-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-item span {
+    font-size: 16px;
 }
