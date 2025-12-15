@@ -648,19 +648,23 @@ function setupScreenshotButton() {
     document.body.appendChild(toast);
 
     btn.addEventListener('click', async () => {
+        console.log('Screenshot button clicked');
         // Visual feedback
         flash.classList.add('active');
         setTimeout(() => flash.classList.remove('active'), 300);
 
         try {
             const card = document.querySelector('.speed-test-card');
-            if (!card) return;
+            if (!card) {
+                alert('Erro: Elemento do cartão não encontrado!');
+                return;
+            }
 
             // Capture
             const canvas = await html2canvas(card, {
                 backgroundColor: '#1a1a2e',
                 scale: 2, // Retina quality
-                logging: false,
+                logging: false, // Enable for debugging if needed
                 useCORS: true
             });
 
@@ -677,27 +681,46 @@ function setupScreenshotButton() {
             ctx.font = '16px Inter, sans-serif';
             ctx.fillText('Medidor de Velocidade Premium', canvas.width - 30, canvas.height - 60);
 
-            // Copy to clipboard
+            // Trigger Download (Primary Backup)
+            try {
+                const link = document.createElement('a');
+                link.download = `speedtest-${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (e) {
+                console.error('Download error:', e);
+                alert('Erro ao baixar imagem: ' + e.message);
+            }
+
+            // Try to Copy to clipboard (Best Effort)
             canvas.toBlob(async blob => {
+                if (!blob) {
+                    alert('Erro ao gerar imagem para área de transferência');
+                    return;
+                }
+
                 try {
                     await navigator.clipboard.write([
                         new ClipboardItem({ 'image/png': blob })
                     ]);
 
                     // Show success toast
-                    toast.innerHTML = '<span>📸</span> Resultado copiado com data/hora!';
+                    toast.innerHTML = '<span>📸</span> Salvo e copiado!';
                     toast.classList.add('show');
                     setTimeout(() => toast.classList.remove('show'), 3000);
 
                 } catch (err) {
-                    console.error('Clipboard failed:', err);
-                    alert('Erro ao copiar imagem. Verifique permissões do navegador.');
+                    console.warn('Clipboard failed:', err);
+                    // Just notify about download
+                    toast.innerHTML = '<span>⬇️</span> Imagem baixada (Cópia falhou)';
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 3000);
                 }
-            });
+            }, 'image/png');
 
         } catch (error) {
             console.error('Screenshot failed:', error);
-            alert('Erro ao capturar tela.');
+            alert('Erro crítico ao capturar tela: ' + error.message);
         }
     });
 }
