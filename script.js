@@ -199,43 +199,69 @@ async function measureUploadSpeed(url) {
         return simulateUploadSpeed();
     }
 
-    const uploadSize = 2 * 1024 * 1024; // 2 MB
-    const data = new Uint8Array(uploadSize);
+    const duration = 8000; // 8 seconds test
+    const startTime = performance.now();
+    const endTime = startTime + duration;
+    let totalBytesUploaded = 0;
 
+    // Create a 2MB chunk for upload
+    const uniqueSize = 2 * 1024 * 1024;
+    const data = new Uint8Array(uniqueSize);
     // Fill with random data
-    for (let i = 0; i < uploadSize; i += 1024) {
+    for (let i = 0; i < uniqueSize; i += 1024) {
         data[i] = Math.floor(Math.random() * 256);
     }
 
-    const startTime = performance.now();
-
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            body: data,
-            headers: {
-                'Content-Type': 'application/octet-stream'
-            },
-            cache: 'no-cache',
-            signal: AbortSignal.timeout(15000)
-        });
+        let lastUpdate = 0;
 
-        if (!response.ok) {
-            console.warn('Upload response not OK, using simulation');
-            return simulateUploadSpeed();
+        while (performance.now() < endTime && isTesting) {
+            // Append timestamp to avoid caching
+            const uploadUrl = url.includes('?') ? `${url}&t=${Date.now()}` : `${url}?t=${Date.now()}`;
+
+            await fetch(uploadUrl, {
+                method: 'POST',
+                body: data,
+                headers: {
+                    'Content-Type': 'application/octet-stream'
+                },
+                cache: 'no-cache',
+                mode: 'cors'
+            });
+
+            totalBytesUploaded += uniqueSize;
+
+            // Update UI every 100ms
+            const now = performance.now();
+            if (now - lastUpdate > 100) {
+                const elapsedTime = (now - startTime) / 1000;
+                if (elapsedTime > 0) {
+                    const currentSpeedBps = (totalBytesUploaded * 8) / elapsedTime;
+                    const mbps = currentSpeedBps / (1024 * 1024);
+
+                    updateGauge(mbps, 100);
+                    elements.uploadSpeed.textContent = mbps.toFixed(2) + ' Mbps';
+
+                    // Progress from 70% to 100%
+                    const progress = 70 + ((elapsedTime / (duration / 1000)) * 30);
+                    updateProgress(Math.min(progress, 99));
+                }
+                lastUpdate = now;
+            }
         }
 
         const totalTime = (performance.now() - startTime) / 1000;
-        const speedBps = (uploadSize * 8) / totalTime;
+        if (totalTime === 0) return 0;
 
+        const speedBps = (totalBytesUploaded * 8) / totalTime;
         const mbps = speedBps / (1024 * 1024);
-        updateGauge(mbps, 100);
 
+        updateGauge(mbps, 100);
         console.log(`✅ Upload real: ${mbps.toFixed(2)} Mbps`);
         return speedBps;
 
     } catch (error) {
-        console.warn('Upload test failed, using simulation:', error.message);
+        console.warn('Upload test failed/interrupted, using simulation:', error);
         return simulateUploadSpeed();
     }
 }
