@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Medidor de Velocidade</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="admin-body">
+    <!-- Login Screen -->
+    <div class="login-screen" id="login-screen">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>🔐 Admin Panel</h1>
+                <p>Medidor de Velocidade</p>
+            </div>
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-primary">Entrar</button>
+                <div id="login-error" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div class="admin-dashboard" id="admin-dashboard" style="display: none;">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="admin-logo">
+                <h2>📊 Admin</h2>
+            </div>
+            <nav class="admin-nav">
+                <button class="nav-item active" data-section="dashboard">
+                    <span class="nav-icon">📈</span>
+                    Dashboard
+                </button>
+                <button class="nav-item" data-section="ads">
+                    <span class="nav-icon">📢</span>
+                    Anúncios
+                </button>
+                <button class="nav-item" data-section="servers">
+                    <span class="nav-icon">🌐</span>
+                    Servidores
+                </button>
+                <button class="nav-item" data-section="results">
+                    <span class="nav-icon">⚡</span>
+                    Resultados
+                </button>
+            </nav>
+            <div class="admin-user">
+                <div class="user-info" id="user-info">
+                    <span class="user-icon">👤</span>
+                    <span class="user-email" id="user-email">Carregando...</span>
+                </div>
+                <button class="btn-logout" id="btn-logout">Sair</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-content">
+            <!-- Header -->
+            <header class="admin-header">
+                <h1 id="section-title">Dashboard</h1>
+                <div class="header-actions" id="header-actions"></div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <section class="content-section active" id="section-dashboard">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total de Testes</div>
+                            <div class="stat-value" id="stat-total-tests">--</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⬇️</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Download Médio</div>
+                            <div class="stat-value" id="stat-avg-download">-- Mbps</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⬆️</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Upload Médio</div>
+                            <div class="stat-value" id="stat-avg-upload">-- Mbps</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⚡</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Ping Médio</div>
+                            <div class="stat-value" id="stat-avg-ping">-- ms</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-tests">
+                    <h3>Testes Recentes</h3>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Servidor</th>
+                                    <th>Download</th>
+                                    <th>Upload</th>
+                                    <th>Ping</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-tests-body">
+                                <tr>
+                                    <td colspan="5" class="loading">Carregando...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Ads Section -->
+            <section class="content-section" id="section-ads">
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Posição</th>
+                                <th>Status</th>
+                                <th>Prioridade</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ads-table-body">
+                            <tr>
+                                <td colspan="5" class="loading">Carregando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Servers Section -->
+            <section class="content-section" id="section-servers">
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Ping URL</th>
+                                <th>Padrão</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="servers-table-body">
+                            <tr>
+                                <td colspan="5" class="loading">Carregando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="content-section" id="section-results">
+                <div class="filters-bar">
+                    <input type="date" id="filter-start-date" class="filter-input">
+                    <input type="date" id="filter-end-date" class="filter-input">
+                    <button class="btn-filter" id="btn-filter-results">Filtrar</button>
+                    <button class="btn-export" id="btn-export-csv">Exportar CSV</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Servidor</th>
+                                <th>Download (Mbps)</th>
+                                <th>Upload (Mbps)</th>
+                                <th>Ping (ms)</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-table-body">
+                            <tr>
+                                <td colspan="6" class="loading">Carregando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="results-pagination"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Ad Modal -->
+    <div class="modal-overlay" id="ad-modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="ad-modal-title">Novo Anúncio</h2>
+                <button class="btn-close" id="btn-close-ad-modal">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="ad-form">
+                    <input type="hidden" id="ad-id">
+                    <div class="form-group">
+                        <label for="ad-title">Título *</label>
+                        <input type="text" id="ad-title" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ad-position">Posição *</label>
+                            <select id="ad-position" required>
+                                <option value="top-banner">Banner Topo (728x90)</option>
+                                <option value="sidebar">Sidebar (160x600)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ad-priority">Prioridade</label>
+                            <input type="number" id="ad-priority" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="ad-content-html">Conteúdo HTML</label>
+                        <textarea id="ad-content-html" rows="6"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="ad-image-url">URL da Imagem</label>
+                        <input type="url" id="ad-image-url">
+                    </div>
+                    <div class="form-group">
+                        <label for="ad-link-url">URL de Destino</label>
+                        <input type="url" id="ad-link-url">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ad-start-date">Data Início</label>
+                            <input type="datetime-local" id="ad-start-date">
+                        </div>
+                        <div class="form-group">
+                            <label for="ad-end-date">Data Fim</label>
+                            <input type="datetime-local" id="ad-end-date">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="ad-is-active" checked>
+                            Anúncio Ativo
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" id="btn-cancel-ad">Cancelar</button>
+                        <button type="submit" class="btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server Modal -->
+    <div class="modal-overlay" id="server-modal-admin">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="server-modal-title">Novo Servidor</h2>
+                <button class="btn-close" id="btn-close-server-modal">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="server-form">
+                    <input type="hidden" id="server-id">
+                    <div class="form-group">
+                        <label for="server-name">Nome *</label>
+                        <input type="text" id="server-name-admin" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="server-download-urls">URLs de Download (JSON Array) *</label>
+                        <textarea id="server-download-urls" rows="3" required
+                            placeholder='["https://example.com/file1", "https://example.com/file2"]'></textarea>
+                        <small>Digite um array JSON com as URLs para teste de download</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="server-upload-url-admin">URL de Upload</label>
+                        <input type="url" id="server-upload-url-admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="server-ping-url-admin">URL de Ping *</label>
+                        <input type="url" id="server-ping-url-admin" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="server-is-default">
+                            Servidor Padrão
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="server-is-active" checked>
+                            Servidor Ativo
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" id="btn-cancel-server">Cancelar</button>
+                        <button type="submit" class="btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="supabase-config.js"></script>
+    <script src="admin.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Upload - Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .test-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 255, 0, 0.1);
+            border-radius: 8px;
+            display: none;
+        }
+
+        .log {
+            font-family: monospace;
+            font-size: 12px;
+            background: #000;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log div {
+            margin: 5px 0;
+        }
+
+        .success {
+            color: #0f0;
+        }
+
+        .error {
+            color: #f00;
+        }
+
+        .info {
+            color: #0af;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔧 Debug: Teste de Upload</h1>
+
+    <div class="test-box">
+        <h2>Testes Disponíveis</h2>
+        <button onclick="testSimulatedUpload()">1. Testar Upload Simulado</button>
+        <button onclick="testRealUpload()">2. Testar Upload Real (HTTPBin)</button>
+        <button onclick="testBothMethods()">3. Testar Ambos</button>
+    </div>
+
+    <div id="result">
+        <h3>Resultado:</h3>
+        <p id="uploadSpeed">--</p>
+        <p id="method">--</p>
+    </div>
+
+    <div class="test-box">
+        <h3>Console Log:</h3>
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        const log = (msg, type = 'info') => {
+            const logEl = document.getElementById('log');
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logEl.appendChild(div);
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(msg);
+        };
+
+        const showResult = (speed, method) => {
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('uploadSpeed').textContent = `Velocidade: ${speed.toFixed(2)} Mbps`;
+            document.getElementById('method').textContent = `Método: ${method}`;
+        };
+
+        // Função de simulação
+        function simulateUploadSpeed(downloadMbps = 50) {
+            const uploadRatio = 0.15 + (Math.random() * 0.15);
+            const uploadMbps = downloadMbps * uploadRatio;
+            const variation = 0.9 + (Math.random() * 0.2);
+            const finalUploadMbps = Math.max(1, uploadMbps * variation);
+
+            log(`Simulação: Download ${downloadMbps} Mbps → Upload ${finalUploadMbps.toFixed(2)} Mbps`, 'info');
+            return finalUploadMbps;
+        }
+
+        async function testSimulatedUpload() {
+            log('Iniciando teste de upload simulado...', 'info');
+            try {
+                const speed = simulateUploadSpeed(50);
+                showResult(speed, 'Simulado');
+                log(`✅ Upload simulado: ${speed.toFixed(2)} Mbps`, 'success');
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRealUpload() {
+            log('Iniciando teste de upload real...', 'info');
+            const url = 'https://httpbin.org/post';
+            const uploadSize = 1024 * 1024; // 1 MB (menor para teste)
+
+            try {
+                log(`Criando ${uploadSize} bytes de dados...`, 'info');
+                const data = new Uint8Array(uploadSize);
+                for (let i = 0; i < uploadSize; i += 1024) {
+                    data[i] = Math.floor(Math.random() * 256);
+                }
+
+                log(`Enviando para ${url}...`, 'info');
+                const startTime = performance.now();
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: data,
+                    headers: {
+                        'Content-Type': 'application/octet-stream'
+                    },
+                    cache: 'no-cache'
+                });
+
+                const totalTime = (performance.now() - startTime) / 1000;
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const speedBps = (uploadSize * 8) / totalTime;
+                const mbps = speedBps / (1024 * 1024);
+
+                showResult(mbps, 'Real (HTTPBin)');
+                log(`✅ Upload real: ${mbps.toFixed(2)} Mbps em ${totalTime.toFixed(2)}s`, 'success');
+                log(`📊 Detalhes: ${uploadSize} bytes em ${totalTime.toFixed(2)}s`, 'info');
+
+            } catch (error) {
+                log(`❌ Upload real falhou: ${error.message}`, 'error');
+                log('Tentando simulação como fallback...', 'info');
+                const speed = simulateUploadSpeed(50);
+                showResult(speed, 'Simulado (fallback após erro)');
+                log(`✅ Upload simulado (fallback): ${speed.toFixed(2)} Mbps`, 'success');
+            }
+        }
+
+        async function testBothMethods() {
+            log('=== Testando ambos os métodos ===', 'info');
+            await testRealUpload();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testSimulatedUpload();
+        }
+
+        // Log inicial
+        log('Debug carregado. Clique em um botão para testar.', 'info');
+        log(`Navegador: ${navigator.userAgent}`, 'info');
+    </script>
+</body>
+
+</html>
