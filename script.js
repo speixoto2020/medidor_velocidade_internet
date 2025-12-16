@@ -58,10 +58,31 @@ const elements = {
     customServersList: document.getElementById('custom-servers-list'),
     serverNameInput: document.getElementById('server-name-input'),
     serverUrlInput: document.getElementById('server-url-input'),
-    btnAddServer: document.getElementById('btn-add-server')
+    btnAddServer: document.getElementById('btn-add-server'),
+    clientInfoText: document.getElementById('client-info-text')
 };
 
 // ==================== Utility Functions ====================
+async function fetchClientInfo() {
+    if (!elements.clientInfoText) return;
+
+    try {
+        const response = await fetch('https://ipwhois.app/json/');
+        const data = await response.json();
+
+        if (data.success !== false) {
+            const isp = data.isp || data.org || 'Provedor Desconhecido';
+            const ip = data.ip;
+            elements.clientInfoText.textContent = `${isp} ${ip}`;
+        } else {
+            elements.clientInfoText.textContent = 'Provedor Desconhecido';
+        }
+    } catch (error) {
+        console.error('Error fetching client info:', error);
+        elements.clientInfoText.textContent = 'Conexão Desconhecida';
+    }
+}
+
 function formatSpeed(bps) {
     const mbps = bps / (1024 * 1024);
     return mbps.toFixed(2);
@@ -544,6 +565,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Initialize Screenshot Button
     setupScreenshotButton();
+
+    // Fetch Client Info (ISP + IP)
+    fetchClientInfo();
 });
 
 // ==================== Supabase Integration ====================
