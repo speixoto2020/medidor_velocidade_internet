@@ -1,5 +1,4 @@
 // ==================== Configuration ====================
-// ==================== Configuration ====================
 const DEFAULT_SERVERS = [
     {
         id: 'cloudflare',
@@ -80,6 +79,7 @@ async function fetchClientInfo() {
 
     // 2. Fetch IP and ISP Info with Fallback
     const apis = [
+        { url: 'https://ipinfo.io/json', field_isp: 'org', field_ip: 'ip' }, // Very reliable HTTPS
         { url: 'https://ipapi.co/json/', field_isp: 'org', field_ip: 'ip' },
         { url: 'https://ipwhois.app/json/', field_isp: 'isp', field_ip: 'ip' },
         { url: 'https://api.db-ip.com/v2/free/self', field_isp: 'isp', field_ip: 'ipAddress' }
@@ -105,8 +105,24 @@ async function fetchClientInfo() {
             return; // Success, exit function
         } catch (error) {
             console.warn(`Failed to fetch from ${api.url}:`, error);
-            // Continue to next API
         }
+    }
+
+    // Fallback: Try Cloudflare Trace (Text format, guarantees at least IP)
+    try {
+        const response = await fetch('https://speed.cloudflare.com/cdn-cgi/trace');
+        if (response.ok) {
+            const text = await response.text();
+            const ipMatch = text.match(/ip=(.+)/);
+            if (ipMatch && ipMatch[1]) {
+                if (elements.clientIp) elements.clientIp.textContent = ipMatch[1];
+                if (elements.clientIsp) elements.clientIsp.textContent = 'Provedor (Detectado via Trace)';
+                console.log('✅ Client IP fetched from Cloudflare Trace');
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn('Cloudflare trace failed:', e);
     }
 
     // If all fail
@@ -531,6 +547,8 @@ function renderServerLists() {
 
 // ==================== History Rendering ====================
 function renderHistory() {
+    if (!elements.historyList) return; // Exit if history list doesn't exist (e.g., on index page)
+
     if (testResults.length === 0) {
         elements.historyList.innerHTML = `
             <div class="empty-state">
@@ -745,8 +763,11 @@ function setupScreenshotButton() {
     const btnCloseResult = document.getElementById('btn-close-result');
     const btnDownload = document.getElementById('btn-download-result');
     const btnCopy = document.getElementById('btn-copy-result');
+    const menu = document.getElementById('screenshot-menu');
+    const btnCapture = document.getElementById('menu-capture'); // Fixed ID
+    const btnSave = document.getElementById('menu-save');       // Fixed ID
 
-    if (!btn || !resultModal) return;
+    if (!btn || !resultModal || !menu || !btnCapture || !btnSave) return; // Guard clause
 
     btn.style.display = 'flex';
 
@@ -757,7 +778,6 @@ function setupScreenshotButton() {
         if (e.target === resultModal) closeResultModal();
     });
 
-    // Main Screenshot Logic
     // Helper for Toast Notifications
     function showToast(message, type = 'success') {
         const toast = document.createElement('div');
@@ -777,12 +797,6 @@ function setupScreenshotButton() {
         }, 3000);
     }
 
-    // Main Screenshot Logic
-    // --- Dropdown Menu Logic ---
-    const menu = document.getElementById('screenshot-menu');
-    const btnCapture = document.getElementById('menu-capture'); // Fixed ID
-    const btnSave = document.getElementById('menu-save');       // Fixed ID
-
     // Toggle Menu
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -796,247 +810,71 @@ function setupScreenshotButton() {
         }
     });
 
-    // Helper: Generate Screenshot
-    async function generateScreenshot() {
-        // Visual feedback
-        const flash = document.querySelector('.screenshot-flash') || document.createElement('div');
-        if (!flash.parentNode) {
-            flash.className = 'screenshot-flash';
-            document.body.appendChild(flash);
-        }
-        flash.classList.add('active');
-        setTimeout(() => flash.classList.remove('active'), 300);
+    // Capture functionality
+    async function captureScreenshot(action = 'copy') {
+        // Hide UI elements before capture
+        menu.classList.remove('active');
+        btn.style.display = 'none';
 
-        // Find elements
-        const speedCard = document.querySelector('.speed-test-card');
-        const metricsGrid = document.querySelector('.metrics-grid');
-
-        if (!speedCard || !metricsGrid) return null;
-
-        // 1. Create a container for composition
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'absolute';
-        wrapper.style.top = '-9999px';
-        wrapper.style.left = '-9999px';
-        wrapper.style.width = '800px'; // Wider to fit everything nicely
-        wrapper.style.backgroundColor = '#1a1a2e'; // Main Background
-        wrapper.style.padding = '40px';
-        wrapper.style.borderRadius = '20px';
-        wrapper.style.fontFamily = "'Inter', sans-serif";
-        wrapper.style.display = 'flex';
-        wrapper.style.flexDirection = 'column';
-        wrapper.style.alignItems = 'center';
-        wrapper.style.gap = '20px';
-        document.body.appendChild(wrapper);
-
-        // 2. Headings / Branding Title
-        const title = document.createElement('h2');
-        title.textContent = 'NossaConexão';
-        title.style.color = '#fff';
-        title.style.fontSize = '32px';
-        title.style.marginBottom = '10px';
-        title.style.fontWeight = '700';
-        wrapper.appendChild(title);
-
-        // 3. Clone Gauge Section
-        const cardClone = speedCard.cloneNode(true);
-        // Clean up card clone
-        const btnTest = cardClone.querySelector('#btn-start-test');
-        if (btnTest) btnTest.remove();
-        const progContainer = cardClone.querySelector('#progress-container');
-        if (progContainer) progContainer.remove();
-        const btnConfig = cardClone.querySelector('#btn-server-config');
-        if (btnConfig) btnConfig.remove();
-
-        // REMOVE DUPLICATE METRICS GRID FROM CARD CLONE
-        const internalGrid = cardClone.querySelector('.metrics-grid');
-        if (internalGrid) internalGrid.remove();
-
-        const serverInfo = cardClone.querySelector('.server-info');
-        if (serverInfo) serverInfo.style.marginBottom = '20px';
-
-        // Style Card Clone
-        cardClone.style.background = 'transparent';
-        cardClone.style.boxShadow = 'none';
-        cardClone.style.padding = '0';
-        cardClone.style.border = 'none';
-        cardClone.style.display = 'flex';
-        cardClone.style.flexDirection = 'column';
-        cardClone.style.alignItems = 'center';
-        cardClone.style.width = '100%';
-
-        // Force Text Colors (Fix Darkness)
-        const gaugeLabel = cardClone.querySelector('#gauge-label');
-        if (gaugeLabel) {
-            gaugeLabel.style.setProperty('color', '#ffffff', 'important');
-            gaugeLabel.style.setProperty('font-weight', '600', 'important');
-        }
-        const serverName = cardClone.querySelector('#current-server-name');
-        if (serverName) serverName.style.color = '#a0a0b0';
-
-        // FORCE SVG VISIBILITY - AGGRESSIVE
-        const svg = cardClone.querySelector('svg');
-        if (svg) {
-            // Force Text Elements
-            const texts = svg.querySelectorAll('text');
-            texts.forEach(t => {
-                t.style.setProperty('fill', '#ffffff', 'important');
-                t.setAttribute('fill', '#ffffff');
+        try {
+            // Use html2canvas to capture
+            const canvas = await html2canvas(document.querySelector('.content-wrapper'), {
+                backgroundColor: '#0a0e27', // Match CSS bg
+                scale: 2, // High DPI
+                logging: false,
+                useCORS: true
             });
 
-            // Force Background Arc
-            const bgPath = svg.querySelector('.gauge-bg');
-            if (bgPath) {
-                bgPath.style.stroke = 'rgba(255, 255, 255, 0.1)';
-                bgPath.setAttribute('stroke', 'rgba(255, 255, 255, 0.1)');
+            // Restore UI
+            btn.style.display = 'flex';
+
+            // Generate Filename
+            const date = new Date();
+            const timestamp = date.toISOString().replace(/[:.]/g, '-');
+            const filename = `NossaConexao-${timestamp}.jpg`; // JPG format
+
+            if (action === 'download') {
+                // Trigger download
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+                showToast('Screenshot salva com sucesso!', 'success');
+            } else {
+                // Show in Modal for Copy
+                resultImage.src = canvas.toDataURL('image/jpeg', 0.9);
+                resultModal.classList.add('active');
+
+                // Handle Copy Button inside Modal
+                btnCopy.onclick = () => {
+                    canvas.toBlob(blob => {
+                        const item = new ClipboardItem({ 'image/png': blob }); // Clipboard API supports PNG better
+                        navigator.clipboard.write([item])
+                            .then(() => showToast('Copiado para a área de transferência!', 'success'))
+                            .catch(err => {
+                                console.error('Clipboard error:', err);
+                                showToast('Erro ao copiar imagem (bloqueio do navegador)', 'error');
+                            });
+                    });
+                };
+
+                // Handle Download Button inside Modal
+                btnDownload.onclick = () => {
+                    const link = document.createElement('a');
+                    link.download = filename;
+                    link.href = canvas.toDataURL('image/jpeg', 0.9);
+                    link.click();
+                };
             }
 
-            // Force Progress Arc (if active)
-            const progressPath = svg.querySelector('.gauge-progress');
-            if (progressPath) {
-                // Use bright cyan or the computed color if visible, but defaulting to bright
-                progressPath.style.stroke = '#00ff88';
-                progressPath.setAttribute('stroke', '#00ff88');
-            }
+        } catch (error) {
+            console.error('Screenshot error:', error);
+            btn.style.display = 'flex'; // Restore if error
+            showToast('Erro ao capturar tela', 'error');
         }
-
-        wrapper.appendChild(cardClone);
-
-        // 4. Clone Metrics Grid
-        const gridClone = metricsGrid.cloneNode(true);
-        gridClone.style.display = 'flex';
-        gridClone.style.width = '100%';
-        gridClone.style.justifyContent = 'space-around';
-        gridClone.style.background = 'rgba(255, 255, 255, 0.05)';
-        gridClone.style.padding = '20px';
-        gridClone.style.borderRadius = '15px';
-        gridClone.style.marginTop = '10px';
-
-        // Style items in grid
-        const items = gridClone.querySelectorAll('.metric-item');
-        items.forEach(item => {
-            item.style.display = 'flex';
-            item.style.alignItems = 'center';
-            item.style.gap = '15px';
-            const val = item.querySelector('.metric-value');
-            if (val) {
-                val.style.setProperty('color', '#ffffff', 'important');
-                val.style.fontWeight = 'bold';
-            }
-            const label = item.querySelector('.metric-label');
-            if (label) label.style.color = '#a0a0b0';
-        });
-
-        wrapper.appendChild(gridClone);
-
-        // 5. Capture
-        const canvas = await html2canvas(wrapper, {
-            backgroundColor: '#1a1a2e',
-            scale: 2,
-            logging: false,
-            useCORS: true,
-            allowTaint: true,
-            ignoreElements: (element) => {
-                return element.id === 'progress-container';
-            }
-        });
-
-        // Cleanup
-        document.body.removeChild(wrapper);
-
-        // Add Watermark
-        const ctx = canvas.getContext('2d');
-        const now = new Date();
-        ctx.font = '16px Inter, sans-serif';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        ctx.textAlign = 'right';
-        ctx.fillText(`${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR')}`, canvas.width - 30, canvas.height - 30);
-
-        return canvas;
     }
 
-    // Option 1: Capture (Show Modal + Copy)
-    btnCapture.addEventListener('click', async () => {
-        menu.classList.remove('active');
-        try {
-            const canvas = await generateScreenshot();
-            if (!canvas) return;
-
-            // USE JPG FORMAT (Quality 0.9)
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-            resultImage.src = dataUrl;
-            resultModal.classList.add('active');
-
-            // Auto Copy Logic with Error Handling
-            // Note: Clipboard API supports PNG best. JPG support varies.
-            // We will try to convert the blob to PNG for clipboard if needed, 
-            // but standard clipboard writes usually expect PNG.
-            // Let's write the JPG blob if supported, or fallback to PNG for clipboard only.
-            // Actually, browsers mostly support 'image/png' for ClipboardItem.
-            // So for CLIPBOARD we keep PNG to ensure it works. 
-            // For DOWNLOAD we use JPG.
-
-            // Generate a fresh PNG blob for the clipboard just in case
-            canvas.toBlob(pngBlob => {
-                navigator.clipboard.write([
-                    new ClipboardItem({ 'image/png': pngBlob })
-                ]).then(() => {
-                    showToast('📋 Copiado para a área de transferência!');
-                }).catch(err => {
-                    console.error('Auto-copy failed:', err);
-                    // Error handling...
-                    showToast('⚠️ Não foi possível copiar automaticamente', 'error');
-                });
-            }, 'image/png');
-
-            // Modal Buttons Setup
-            btnDownload.onclick = () => {
-                const link = document.createElement('a');
-                link.download = `NossaConexao-${Date.now()}.jpg`; // name change
-                link.href = dataUrl;
-                link.click();
-            };
-
-            btnCopy.onclick = () => {
-                canvas.toBlob(blob => {
-                    if (blob) {
-                        navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-                            .then(() => showToast('✅ Copiado novamente!'))
-                            .catch(() => showToast('❌ Erro ao copiar', 'error'));
-                    }
-                }, 'image/png'); // Always PNG for clipboard compatibility
-            };
-
-        } catch (error) {
-            console.error(error);
-            showToast('❌ Erro ao capturar', 'error');
-        }
-    });
-
-    // Option 2: Save Capture (Direct Download)
-    btnSave.addEventListener('click', async () => {
-        menu.classList.remove('active');
-        try {
-            const canvas = await generateScreenshot();
-            if (!canvas) return;
-
-            // DOWNLOAD AS JPG
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-            const filename = `NossaConexao-${Date.now()}.jpg`;
-
-            const link = document.createElement('a');
-            link.download = filename;
-            link.href = dataUrl;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            showToast('⬇️ Salvo na pasta Downloads!');
-
-        } catch (error) {
-            console.error(error);
-            showToast('❌ Erro ao salvar', 'error');
-        }
-    });
-
+    // Connect Menu Buttons
+    btnCapture.addEventListener('click', () => captureScreenshot('copy'));
+    btnSave.addEventListener('click', () => captureScreenshot('download'));
 }
