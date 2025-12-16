@@ -4,8 +4,8 @@
 // IMPORTANT: Update these values with your Supabase project credentials
 // You can find them in: Supabase Dashboard > Project Settings > API
 
-const SUPABASE_URL = 'https://txutnpgwiqavhhfrbyom.supabase.co'; // Example: https://xxxxx.supabase.co
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4dXRucGd3aXFhdmhoZnJieW9tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MTM0NzIsImV4cCI6MjA4MTM4OTQ3Mn0.lVpdGh0ax8J9YkE_pxB6GFE1rqJJXNaYGPUns_KO7DA'; // Your anon/public key
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // ================================================
 // Initialize Supabase Client
