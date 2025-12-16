@@ -78,22 +78,40 @@ async function fetchClientInfo() {
         elements.clientId.textContent = deviceId;
     }
 
-    // 2. Fetch IP and ISP Info
-    try {
-        const response = await fetch('https://ipwhois.app/json/');
-        const data = await response.json();
+    // 2. Fetch IP and ISP Info with Fallback
+    const apis = [
+        { url: 'https://ipapi.co/json/', field_isp: 'org', field_ip: 'ip' },
+        { url: 'https://ipwhois.app/json/', field_isp: 'isp', field_ip: 'ip' },
+        { url: 'https://api.db-ip.com/v2/free/self', field_isp: 'isp', field_ip: 'ipAddress' }
+    ];
 
-        if (data.success !== false) {
-            if (elements.clientIsp) elements.clientIsp.textContent = data.isp || data.org || 'Provedor Desconhecido';
-            if (elements.clientIp) elements.clientIp.textContent = data.ip || '--';
-        } else {
-            if (elements.clientIsp) elements.clientIsp.textContent = 'Indisponível';
-            if (elements.clientIp) elements.clientIp.textContent = 'IPV4/6 Oculto';
+    for (const api of apis) {
+        try {
+            const response = await fetch(api.url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const data = await response.json();
+
+            // Check for success flags if applicable (ipwhois uses success: false)
+            if (data.success === false) throw new Error('API returned success: false');
+
+            const isp = data[api.field_isp] || data.org || data.isp || 'Provedor Desconhecido';
+            const ip = data[api.field_ip] || data.ip || 'IPV4/6 Oculto';
+
+            if (elements.clientIsp) elements.clientIsp.textContent = isp;
+            if (elements.clientIp) elements.clientIp.textContent = ip;
+
+            console.log(`✅ Client info fetched from ${api.url}`);
+            return; // Success, exit function
+        } catch (error) {
+            console.warn(`Failed to fetch from ${api.url}:`, error);
+            // Continue to next API
         }
-    } catch (error) {
-        console.error('Error fetching client info:', error);
-        if (elements.clientIsp) elements.clientIsp.textContent = 'Erro na detecção';
     }
+
+    // If all fail
+    if (elements.clientIsp) elements.clientIsp.textContent = 'Indisponível (Erro na detecção)';
+    if (elements.clientIp) elements.clientIp.textContent = '--';
 }
 
 function formatSpeed(bps) {
