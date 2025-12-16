@@ -1,0 +1,180 @@
+/* Network Visualization */
+.network-vis {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto 2rem auto;
+    padding: 0 1rem;
+}
+
+.vis-endpoint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 2;
+}
+
+.vis-icon-wrapper {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.vis-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.vis-connection {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 2px;
+    margin: 0 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.vis-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(90deg,
+            rgba(255, 255, 255, 0.1) 0px,
+            rgba(255, 255, 255, 0.1) 4px,
+            transparent 4px,
+            transparent 8px);
+}
+
+.particle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--text-primary);
+    box-shadow: 0 0 10px white;
+    opacity: 0;
+}
+
+/* Animations */
+/* Download: Server (Right) -> Client (Left) */
+@keyframes downloadFlow {
+    0% {
+        left: 100%;
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        left: 0%;
+        opacity: 0;
+    }
+}
+
+/* Upload: Client (Left) -> Server (Right) */
+@keyframes uploadFlow {
+    0% {
+        left: 0%;
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    90% {
+        opacity: 1;
+    }
+
+    100% {
+        left: 100%;
+        opacity: 0;
+    }
+}
+
+/* Ping: Bounce */
+@keyframes pingFlow {
+    0% {
+        left: 0%;
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    50% {
+        left: 100%;
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        left: 0%;
+        opacity: 0;
+    }
+}
+
+/* States */
+.network-vis.downloading .particle {
+    background: var(--accent-green);
+    box-shadow: 0 0 10px var(--accent-green);
+    animation: downloadFlow 1s linear infinite;
+}
+
+.network-vis.uploading .particle {
+    background: var(--accent-purple);
+    box-shadow: 0 0 10px var(--accent-purple);
+    animation: uploadFlow 1s linear infinite;
+}
+
+.network-vis.pinging .particle {
+    background: var(--accent-cyan);
+    box-shadow: 0 0 10px var(--accent-cyan);
+    animation: pingFlow 1s ease-in-out infinite;
+}
+
+/* Particle Delays for Stream Effect */
+.particle.p1 {
+    animation-delay: 0s;
+}
+
+.particle.p2 {
+    animation-delay: 0.33s;
+}
+
+.particle.p3 {
+    animation-delay: 0.66s;
+}
+
+/* Active Endpoint Highlight */
+.network-vis.downloading .server .vis-icon-wrapper,
+.network-vis.uploading .client .vis-icon-wrapper {
+    border-color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}

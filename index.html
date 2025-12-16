@@ -8,6 +8,7 @@
     <meta name="keywords" content="velocidade internet, speed test, teste velocidade">
     <title>NossaConexão - Speed Test Premium</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="network_vis.css">
     <link rel="stylesheet" href="screenshot.css">
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -80,12 +81,51 @@
                         </div>
                     </div>
                 </div>
-                
-                 <!-- Client Info -->
-                 <div class="server-info" style="margin-top: -10px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px;">
-                    <div class="server-label">
-                        <span class="icon">💻</span>
-                        <span id="client-info-text">Detectando provedor...</span>
+
+                <!-- Client Info -->
+                <div class="server-info"
+                    style="margin-top: -10px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; display: block;">
+                    <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 8px;">Sua Conexão</div>
+
+                    <div class="server-label" style="margin-bottom: 5px;">
+                        <span class="icon">🏢</span>
+                        <span id="client-isp">Detectando provedor...</span>
+                    </div>
+
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div class="server-label">
+                            <span class="icon">🌐</span>
+                            <span id="client-ip">...</span>
+                        </div>
+                        <div class="server-label">
+                            <span class="icon">🆔</span>
+                            <span id="client-id" style="font-family: monospace; font-size: 0.9em;">...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Network Visualization -->
+                <div class="network-vis" id="network-vis">
+                    <div class="vis-endpoint client">
+                        <div class="vis-icon-wrapper">
+                            <span class="vis-icon">💻</span>
+                        </div>
+                        <span class="vis-label">Você</span>
+                    </div>
+                    <div class="vis-connection">
+                        <div class="vis-line"></div>
+                        <div class="vis-particles" id="vis-particles">
+                            <!-- Particles injected by CSS/JS -->
+                            <div class="particle p1"></div>
+                            <div class="particle p2"></div>
+                            <div class="particle p3"></div>
+                        </div>
+                    </div>
+                    <div class="vis-endpoint server">
+                        <div class="vis-icon-wrapper">
+                            <span class="vis-icon">🌐</span>
+                        </div>
+                        <span class="vis-label">Servidor</span>
                     </div>
                 </div>
 

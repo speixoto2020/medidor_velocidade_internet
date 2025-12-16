@@ -59,27 +59,40 @@ const elements = {
     serverNameInput: document.getElementById('server-name-input'),
     serverUrlInput: document.getElementById('server-url-input'),
     btnAddServer: document.getElementById('btn-add-server'),
-    clientInfoText: document.getElementById('client-info-text')
+    clientIsp: document.getElementById('client-isp'),
+    clientIp: document.getElementById('client-ip'),
+    clientId: document.getElementById('client-id')
 };
 
 // ==================== Utility Functions ====================
 async function fetchClientInfo() {
-    if (!elements.clientInfoText) return;
+    // 1. Get or Create Device ID
+    let deviceId = localStorage.getItem('device_uuid');
+    if (!deviceId) {
+        deviceId = crypto.randomUUID();
+        localStorage.setItem('device_uuid', deviceId);
+    }
 
+    // Display Device ID (Simulated MAC)
+    if (elements.clientId) {
+        elements.clientId.textContent = deviceId;
+    }
+
+    // 2. Fetch IP and ISP Info
     try {
         const response = await fetch('https://ipwhois.app/json/');
         const data = await response.json();
 
         if (data.success !== false) {
-            const isp = data.isp || data.org || 'Provedor Desconhecido';
-            const ip = data.ip;
-            elements.clientInfoText.textContent = `${isp} ${ip}`;
+            if (elements.clientIsp) elements.clientIsp.textContent = data.isp || data.org || 'Provedor Desconhecido';
+            if (elements.clientIp) elements.clientIp.textContent = data.ip || '--';
         } else {
-            elements.clientInfoText.textContent = 'Provedor Desconhecido';
+            if (elements.clientIsp) elements.clientIsp.textContent = 'Indisponível';
+            if (elements.clientIp) elements.clientIp.textContent = 'IPV4/6 Oculto';
         }
     } catch (error) {
         console.error('Error fetching client info:', error);
-        elements.clientInfoText.textContent = 'Conexão Desconhecida';
+        if (elements.clientIsp) elements.clientIsp.textContent = 'Erro na detecção';
     }
 }
 
@@ -322,11 +335,20 @@ async function runSpeedTest() {
     elements.btnStartTest.innerHTML = '<span class="btn-text">Testando...</span><span class="btn-icon">⏸️</span>';
     showProgress();
 
+    // Visual Elements for Animation
+    const netVis = document.getElementById('network-vis');
+    const setVisState = (state) => {
+        if (!netVis) return;
+        netVis.classList.remove('pinging', 'downloading', 'uploading');
+        if (state) netVis.classList.add(state);
+    };
+
     // Reset values
     elements.downloadSpeed.textContent = '-- Mbps';
     elements.uploadSpeed.textContent = '-- Mbps';
     elements.pingValue.textContent = '-- ms';
     updateGauge(0);
+
 
     const results = {
         timestamp: Date.now(),
@@ -338,6 +360,7 @@ async function runSpeedTest() {
 
     try {
         // Step 1: Ping Test
+        setVisState('pinging');
         elements.gaugeLabel.textContent = 'Medindo latência...';
         updateProgress(10);
         results.ping = await measurePing(currentServer.pingUrl);
@@ -345,6 +368,7 @@ async function runSpeedTest() {
         updateProgress(25);
 
         // Step 2: Download Test
+        setVisState('downloading');
         elements.gaugeLabel.textContent = 'Testando download...';
         results.download = await measureDownloadSpeed(currentServer.downloadUrls);
         const downloadMbps = formatSpeed(results.download);
@@ -352,11 +376,17 @@ async function runSpeedTest() {
         updateProgress(70);
 
         // Step 3: Upload Test
+        setVisState('uploading');
         elements.gaugeLabel.textContent = 'Testando upload...';
         results.upload = await measureUploadSpeed(currentServer.uploadUrl);
         const uploadMbps = formatSpeed(results.upload);
         elements.uploadSpeed.textContent = uploadMbps + ' Mbps';
         updateProgress(100);
+
+        // Capture Client Info for Local History
+        results.clientIp = elements.clientIp ? elements.clientIp.textContent : '--';
+        results.clientIsp = elements.clientIsp ? elements.clientIsp.textContent : 'Unknown';
+        results.deviceId = localStorage.getItem('device_uuid') || 'Unknown';
 
         // Save results to localStorage
         testResults.unshift(results);
@@ -366,33 +396,10 @@ async function runSpeedTest() {
         // Save to Supabase database if configured
         if (window.supabaseAPI && window.supabaseAPI.isConfigured()) {
             try {
-                // Get Client Info
-                let clientIp = null;
-                let clientIsp = null;
-                const clientInfoText = elements.clientInfoText ? elements.clientInfoText.textContent : '';
-
-                if (clientInfoText && clientInfoText !== 'Detectando provedor...') {
-                    // Try to parse "ISP IP" format
-                    const parts = clientInfoText.split(' ');
-                    if (parts.length > 0) {
-                        clientIp = parts[parts.length - 1]; // Assume last part is IP
-                        clientIsp = parts.slice(0, parts.length - 1).join(' '); // Remainder is ISP
-
-                        // Basic validation if last part looks like IP, otherwise treat whole string as ISP or unknown
-                        if (!clientIp.includes('.') && !clientIp.includes(':')) {
-                            // formatting fallback
-                            clientIp = null;
-                            clientIsp = clientInfoText;
-                        }
-                    }
-                }
-
-                // Get or Create Persistent Device UUID (Fake MAC)
-                let deviceId = localStorage.getItem('device_uuid');
-                if (!deviceId) {
-                    deviceId = crypto.randomUUID();
-                    localStorage.setItem('device_uuid', deviceId);
-                }
+                // Get Client Info directly from DOM or storage
+                const clientIp = elements.clientIp ? elements.clientIp.textContent : null;
+                const clientIsp = elements.clientIsp ? elements.clientIsp.textContent : null;
+                const deviceId = localStorage.getItem('device_uuid');
 
                 await window.supabaseAPI.results.saveResult({
                     server_id: currentServer.supabaseId || null,
@@ -401,8 +408,8 @@ async function runSpeedTest() {
                     upload_speed: results.upload > 0 ? parseFloat(formatSpeed(results.upload)) : null,
                     ping: results.ping,
                     user_agent: navigator.userAgent,
-                    client_ip: clientIp,
-                    client_isp: clientIsp,
+                    client_ip: clientIp !== '...' ? clientIp : null,
+                    client_isp: clientIsp !== 'Detectando provedor...' ? clientIsp : null,
                     client_uuid: deviceId
                 });
                 console.log('✅ Resultado salvo no banco de dados com ID do dispositivo:', deviceId);
@@ -419,6 +426,7 @@ async function runSpeedTest() {
         elements.gaugeLabel.textContent = 'Erro no teste';
     } finally {
         isTesting = false;
+        if (netVis) netVis.classList.remove('pinging', 'downloading', 'uploading'); // Stop animation
         elements.btnStartTest.classList.remove('testing');
         elements.btnStartTest.innerHTML = '<span class="btn-text">Iniciar Teste</span><span class="btn-icon">▶️</span>';
         setTimeout(hideProgress, 1000);
@@ -515,11 +523,37 @@ function renderHistory() {
         return;
     }
 
-    elements.historyList.innerHTML = testResults.map(result => `
+    // Strict Filter: Only show tests from the current device UUID
+    const currentDeviceId = localStorage.getItem('device_uuid');
+    const userTests = testResults.filter(r => r.deviceId === currentDeviceId);
+
+    if (userTests.length === 0) {
+        elements.historyList.innerHTML = `
+            <div class="empty-state">
+                <span class="empty-icon">📊</span>
+                <p>Nenhum teste deste usuário encontrado</p>
+            </div>
+        `;
+        return;
+    }
+
+    elements.historyList.innerHTML = userTests.map(result => `
         <div class="history-item">
             <div class="history-metric">
                 <div class="history-metric-label">Data/Hora</div>
                 <div class="history-metric-value">${formatDate(result.timestamp)}</div>
+            </div>
+             <div class="history-metric">
+                <div class="history-metric-label">Destino (Servidor)</div>
+                <div class="history-metric-value" style="color: var(--accent-purple);">${result.server || 'Auto'}</div>
+            </div>
+            <div class="history-metric mobile-hide">
+                <div class="history-metric-label">IP Cliente</div>
+                <div class="history-metric-value" style="font-size: 0.9em;">${result.clientIp || '--'}</div>
+            </div>
+             <div class="history-metric mobile-hide">
+                <div class="history-metric-label">ID Disp.</div>
+                <div class="history-metric-value" style="font-size: 0.8em; font-family: monospace;">${(result.deviceId || '').substring(0, 8)}...</div>
             </div>
             <div class="history-metric">
                 <div class="history-metric-label">Download</div>
@@ -529,7 +563,7 @@ function renderHistory() {
                 <div class="history-metric-label">Upload</div>
                 <div class="history-metric-value">${result.upload > 0 ? formatSpeed(result.upload) + ' Mbps' : 'N/A'}</div>
             </div>
-            <div class="history-metric">
+            <div class="history-metric mobile-hide">
                 <div class="history-metric-label">Ping</div>
                 <div class="history-metric-value">${result.ping.toFixed(0)} ms</div>
             </div>

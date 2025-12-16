@@ -386,8 +386,8 @@ body::before {
     border-radius: var(--radius-md);
     padding: var(--spacing-md);
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--spacing-md);
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--spacing-xs);
     transition: all var(--transition-fast);
 }
 
@@ -398,6 +398,8 @@ body::before {
 
 .history-metric {
     text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .history-metric-label {
@@ -699,6 +701,11 @@ body::before {
 
     .history-item {
         grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-md);
+    }
+
+    .mobile-hide {
+        display: none;
     }
 
     .ad-top {
