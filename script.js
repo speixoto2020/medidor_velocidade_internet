@@ -366,15 +366,46 @@ async function runSpeedTest() {
         // Save to Supabase database if configured
         if (window.supabaseAPI && window.supabaseAPI.isConfigured()) {
             try {
+                // Get Client Info
+                let clientIp = null;
+                let clientIsp = null;
+                const clientInfoText = elements.clientInfoText ? elements.clientInfoText.textContent : '';
+
+                if (clientInfoText && clientInfoText !== 'Detectando provedor...') {
+                    // Try to parse "ISP IP" format
+                    const parts = clientInfoText.split(' ');
+                    if (parts.length > 0) {
+                        clientIp = parts[parts.length - 1]; // Assume last part is IP
+                        clientIsp = parts.slice(0, parts.length - 1).join(' '); // Remainder is ISP
+
+                        // Basic validation if last part looks like IP, otherwise treat whole string as ISP or unknown
+                        if (!clientIp.includes('.') && !clientIp.includes(':')) {
+                            // formatting fallback
+                            clientIp = null;
+                            clientIsp = clientInfoText;
+                        }
+                    }
+                }
+
+                // Get or Create Persistent Device UUID (Fake MAC)
+                let deviceId = localStorage.getItem('device_uuid');
+                if (!deviceId) {
+                    deviceId = crypto.randomUUID();
+                    localStorage.setItem('device_uuid', deviceId);
+                }
+
                 await window.supabaseAPI.results.saveResult({
                     server_id: currentServer.supabaseId || null,
                     server_name: currentServer.name,
                     download_speed: parseFloat(formatSpeed(results.download)),
                     upload_speed: results.upload > 0 ? parseFloat(formatSpeed(results.upload)) : null,
                     ping: results.ping,
-                    user_agent: navigator.userAgent
+                    user_agent: navigator.userAgent,
+                    client_ip: clientIp,
+                    client_isp: clientIsp,
+                    client_uuid: deviceId
                 });
-                console.log('✅ Resultado salvo no banco de dados');
+                console.log('✅ Resultado salvo no banco de dados com ID do dispositivo:', deviceId);
             } catch (error) {
                 console.warn('⚠️ Erro ao salvar resultado no banco:', error);
             }
