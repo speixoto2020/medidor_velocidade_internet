@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico - NossaConexão</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- Background overlay same as index -->
+    <div class="main-container">
+        <main class="content-wrapper">
+            <header class="app-header" style="margin-bottom: 2rem;">
+                <div class="logo-container"
+                    style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px;">
+                    <img src="logo.png" alt="NossaConexão Logo" style="height: 40px;">
+                    <h1 style="font-size: 2rem;">Meu Histórico</h1>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <a href="index.html" class="btn-config"
+                        style="text-decoration: none; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                        ⬅️ Voltar
+                    </a>
+                    <button id="btn-clear-history" class="btn-config"
+                        style="color: #f5576c; border-color: rgba(245, 87, 108, 0.3);">
+                        🗑️ Limpar
+                    </button>
+                </div>
+            </header>
+
+            <section class="speed-test-card">
+                <div class="history-list" id="full-history-list">
+                    <!-- Populated by JS -->
+                    <div class="empty-state">
+                        <span class="empty-icon">📊</span>
+                        <p>Carregando histórico...</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script type="module" src="history-page.js"></script>
+</body>
+
+</html>
