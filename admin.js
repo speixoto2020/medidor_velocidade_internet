@@ -111,13 +111,18 @@ async function loadSectionData(section) {
 // ================================================
 async function loadDashboardStats() {
     try {
-        const stats = await window.supabaseAPI.results.getStatistics(30);
+        const statsData = await window.supabaseAPI.results.getStatistics(30);
 
-        if (stats) {
+        if (statsData) {
+            const { stats, results } = statsData;
+
             document.getElementById('stat-total-tests').textContent = stats.totalTests || 0;
             document.getElementById('stat-avg-download').textContent = (stats.avgDownload || 0).toFixed(2) + ' Mbps';
             document.getElementById('stat-avg-upload').textContent = (stats.avgUpload || 0).toFixed(2) + ' Mbps';
             document.getElementById('stat-avg-ping').textContent = (stats.avgPing || 0).toFixed(0) + ' ms';
+
+            // Render Charts
+            renderCharts(results);
         }
 
         // Load recent tests
@@ -128,8 +133,108 @@ async function loadDashboardStats() {
     }
 }
 
+let charts = {}; // Store chart instances
+
+function renderCharts(results) {
+    if (!results || results.length === 0) return;
+
+    // Process data for charts (group by day)
+    const dailyData = {};
+    results.forEach(r => {
+        const day = new Date(r.created_at).toLocaleDateString('pt-BR');
+        if (!dailyData[day]) {
+            dailyData[day] = { count: 0, download: 0, upload: 0, ping: 0 };
+        }
+        dailyData[day].count++;
+        dailyData[day].download += parseFloat(r.download_speed) || 0;
+        dailyData[day].upload += parseFloat(r.upload_speed) || 0;
+    });
+
+    // Sort dates
+    const labels = Object.keys(dailyData).sort((a, b) => {
+        const [da, ma, ya] = a.split('/');
+        const [db, mb, yb] = b.split('/');
+        return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
+    });
+
+    const testCounts = labels.map(day => dailyData[day].count);
+    const avgDownloads = labels.map(day => (dailyData[day].download / dailyData[day].count).toFixed(2));
+    const avgUploads = labels.map(day => (dailyData[day].upload / dailyData[day].count).toFixed(2));
+
+    // Destroy existing charts if any
+    if (charts.testsPerDay) charts.testsPerDay.destroy();
+    if (charts.avgSpeeds) charts.avgSpeeds.destroy();
+
+    // Chart 1: Tests per Day
+    const ctx1 = document.getElementById('chart-tests-per-day').getContext('2d');
+    charts.testsPerDay = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Testes Realizados',
+                data: testCounts,
+                backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'Testes nos últimos 30 dias', color: '#a0aec0' }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a0aec0' } },
+                x: { grid: { display: false }, ticks: { color: '#a0aec0' } }
+            }
+        }
+    });
+
+    // Chart 2: Average Speeds
+    const ctx2 = document.getElementById('chart-avg-speeds').getContext('2d');
+    charts.avgSpeeds = new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Download (Mbps)',
+                    data: avgDownloads,
+                    borderColor: '#4fd1c5',
+                    backgroundColor: 'rgba(79, 209, 197, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Upload (Mbps)',
+                    data: avgUploads,
+                    borderColor: '#9f7aea',
+                    backgroundColor: 'rgba(159, 122, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { labels: { color: '#a0aec0' } },
+                title: { display: true, text: 'Velocidade Média Diária', color: '#a0aec0' }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a0aec0' } },
+                x: { grid: { display: false }, ticks: { color: '#a0aec0' } }
+            }
+        }
+    });
+}
+
 function renderRecentTests(tests) {
     const tbody = document.getElementById('recent-tests-body');
+    if (!tbody) return;
 
     if (tests.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" class="loading">Nenhum teste registrado</td></tr>';

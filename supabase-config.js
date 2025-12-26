@@ -220,9 +220,23 @@ const resultsAPI = {
         }
 
         try {
+            // Map JS keys to DB columns
+            const dbData = {
+                ...resultData,
+                user_ip: resultData.client_ip, // Map client_ip to user_ip
+                client_isp: resultData.client_isp,
+                client_uuid: resultData.client_uuid
+            };
+
+            // Remove keys that don't match columns if necessary, or rely on Postgres ignoring extra if strict is off?
+            // Safer to just ensure we send what we expect.
+            // But we can just destructure to be safe or pass all.
+            // Supabase API might error on unknown columns.
+            delete dbData.client_ip; // Remove the non-existent column
+
             const { data, error } = await supabase
                 .from('speed_test_results')
-                .insert([resultData])
+                .insert([dbData])
                 .select()
                 .single();
 
@@ -279,7 +293,10 @@ const resultsAPI = {
                 minPing: Math.min(...results.map(r => parseFloat(r.ping) || 999999))
             };
 
-            return stats;
+            return {
+                stats,
+                results // Return raw results for charts
+            };
         } catch (error) {
             console.error('Error fetching statistics:', error);
             return null;
