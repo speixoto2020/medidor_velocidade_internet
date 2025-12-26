@@ -123,6 +123,12 @@ async function loadDashboardStats() {
 
             // Render Charts
             renderCharts(results);
+        } else {
+            console.error('Stats data is null');
+            // Show error on UI
+            document.getElementById('stat-total-tests').textContent = 'Erro';
+            // Also try to render empty charts to avoid white boxes
+            renderCharts([]);
         }
 
         // Load recent tests
@@ -130,17 +136,23 @@ async function loadDashboardStats() {
         renderRecentTests(data);
     } catch (error) {
         console.error('Error loading dashboard stats:', error);
+        document.getElementById('stat-total-tests').textContent = 'Erro de Conexão';
     }
 }
 
 let charts = {}; // Store chart instances
 
 function renderCharts(results) {
-    if (!results || results.length === 0) return;
+    // Initialize empty if null
+    const safeResults = results || [];
 
     // Process data for charts (group by day)
     const dailyData = {};
-    results.forEach(r => {
+
+    // If no results, we still want to show the empty chart grid, so we don't return early.
+    // However, we need at least one label to show the axis properly, or just empty.
+
+    safeResults.forEach(r => {
         const day = new Date(r.created_at).toLocaleDateString('pt-BR');
         if (!dailyData[day]) {
             dailyData[day] = { count: 0, download: 0, upload: 0, ping: 0 };
@@ -150,86 +162,94 @@ function renderCharts(results) {
         dailyData[day].upload += parseFloat(r.upload_speed) || 0;
     });
 
-    // Sort dates
-    const labels = Object.keys(dailyData).sort((a, b) => {
-        const [da, ma, ya] = a.split('/');
-        const [db, mb, yb] = b.split('/');
-        return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
-    });
+});
 
-    const testCounts = labels.map(day => dailyData[day].count);
-    const avgDownloads = labels.map(day => (dailyData[day].download / dailyData[day].count).toFixed(2));
-    const avgUploads = labels.map(day => (dailyData[day].upload / dailyData[day].count).toFixed(2));
+// Sort dates
+let labels = Object.keys(dailyData).sort((a, b) => {
+    const [da, ma, ya] = a.split('/');
+    const [db, mb, yb] = b.split('/');
+    return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
+});
 
-    // Destroy existing charts if any
-    if (charts.testsPerDay) charts.testsPerDay.destroy();
-    if (charts.avgSpeeds) charts.avgSpeeds.destroy();
+// If empty, add today as a placeholder so the chart isn't completely broken
+if (labels.length === 0) {
+    labels = [new Date().toLocaleDateString('pt-BR')];
+    dailyData[labels[0]] = { count: 0, download: 0, upload: 0 };
+}
 
-    // Chart 1: Tests per Day
-    const ctx1 = document.getElementById('chart-tests-per-day').getContext('2d');
-    charts.testsPerDay = new Chart(ctx1, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Testes Realizados',
-                data: testCounts,
-                backgroundColor: 'rgba(102, 126, 234, 0.6)',
-                borderColor: 'rgba(102, 126, 234, 1)',
-                borderWidth: 1,
-                borderRadius: 4
-            }]
+const testCounts = labels.map(day => dailyData[day]?.count || 0);
+const avgDownloads = labels.map(day => dailyData[day] ? (dailyData[day].download / dailyData[day].count).toFixed(2) : 0);
+const avgUploads = labels.map(day => dailyData[day] ? (dailyData[day].upload / dailyData[day].count).toFixed(2) : 0);
+
+// Destroy existing charts if any
+if (charts.testsPerDay) charts.testsPerDay.destroy();
+if (charts.avgSpeeds) charts.avgSpeeds.destroy();
+
+// Chart 1: Tests per Day
+const ctx1 = document.getElementById('chart-tests-per-day').getContext('2d');
+charts.testsPerDay = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Testes Realizados',
+            data: testCounts,
+            backgroundColor: 'rgba(102, 126, 234, 0.6)',
+            borderColor: 'rgba(102, 126, 234, 1)',
+            borderWidth: 1,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Testes nos últimos 30 dias', color: '#a0aec0' }
         },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: false },
-                title: { display: true, text: 'Testes nos últimos 30 dias', color: '#a0aec0' }
-            },
-            scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a0aec0' } },
-                x: { grid: { display: false }, ticks: { color: '#a0aec0' } }
-            }
+        scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a0aec0' } },
+            x: { grid: { display: false }, ticks: { color: '#a0aec0' } }
         }
-    });
+    }
+});
 
-    // Chart 2: Average Speeds
-    const ctx2 = document.getElementById('chart-avg-speeds').getContext('2d');
-    charts.avgSpeeds = new Chart(ctx2, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Download (Mbps)',
-                    data: avgDownloads,
-                    borderColor: '#4fd1c5',
-                    backgroundColor: 'rgba(79, 209, 197, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: 'Upload (Mbps)',
-                    data: avgUploads,
-                    borderColor: '#9f7aea',
-                    backgroundColor: 'rgba(159, 122, 234, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { labels: { color: '#a0aec0' } },
-                title: { display: true, text: 'Velocidade Média Diária', color: '#a0aec0' }
+// Chart 2: Average Speeds
+const ctx2 = document.getElementById('chart-avg-speeds').getContext('2d');
+charts.avgSpeeds = new Chart(ctx2, {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Download (Mbps)',
+                data: avgDownloads,
+                borderColor: '#4fd1c5',
+                backgroundColor: 'rgba(79, 209, 197, 0.1)',
+                tension: 0.4,
+                fill: true
             },
-            scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a0aec0' } },
-                x: { grid: { display: false }, ticks: { color: '#a0aec0' } }
+            {
+                label: 'Upload (Mbps)',
+                data: avgUploads,
+                borderColor: '#9f7aea',
+                backgroundColor: 'rgba(159, 122, 234, 0.1)',
+                tension: 0.4,
+                fill: true
             }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { labels: { color: '#a0aec0' } },
+            title: { display: true, text: 'Velocidade Média Diária', color: '#a0aec0' }
+        },
+        scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#a0aec0' } },
+            x: { grid: { display: false }, ticks: { color: '#a0aec0' } }
         }
-    });
+    }
+});
 }
 
 function renderRecentTests(tests) {
