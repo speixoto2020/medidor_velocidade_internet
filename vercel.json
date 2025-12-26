@@ -1,0 +1,13 @@
+{
+    "rewrites": [
+        {
+            "source": "/admin",
+            "destination": "/admin.html"
+        },
+        {
+            "source": "/history",
+            "destination": "/history.html"
+        }
+    ],
+    "cleanUrls": true
+}

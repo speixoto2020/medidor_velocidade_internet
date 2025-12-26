@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS advertisements (
 );
 
 -- Index for active ads query
-CREATE INDEX idx_advertisements_active ON advertisements(is_active, priority DESC, position);
+CREATE INDEX IF NOT EXISTS idx_advertisements_active ON advertisements(is_active, priority DESC, position);
 
 -- ================================================
 -- TABLE: test_servers
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS test_servers (
 );
 
 -- Index for active servers
-CREATE INDEX idx_test_servers_active ON test_servers(is_active, is_default DESC);
+CREATE INDEX IF NOT EXISTS idx_test_servers_active ON test_servers(is_active, is_default DESC);
 
 -- ================================================
 -- TABLE: speed_test_results
@@ -63,8 +63,8 @@ CREATE TABLE IF NOT EXISTS speed_test_results (
 );
 
 -- Indexes for analytics queries
-CREATE INDEX idx_speed_test_results_created ON speed_test_results(created_at DESC);
-CREATE INDEX idx_speed_test_results_server ON speed_test_results(server_id);
+CREATE INDEX IF NOT EXISTS idx_speed_test_results_created ON speed_test_results(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_speed_test_results_server ON speed_test_results(server_id);
 
 -- ================================================
 -- FUNCTION: Update timestamp on record update
@@ -78,11 +78,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers for updated_at
+DROP TRIGGER IF EXISTS update_advertisements_updated_at ON advertisements;
 CREATE TRIGGER update_advertisements_updated_at
     BEFORE UPDATE ON advertisements
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_test_servers_updated_at ON test_servers;
 CREATE TRIGGER update_test_servers_updated_at
     BEFORE UPDATE ON test_servers
     FOR EACH ROW
@@ -102,12 +104,14 @@ ALTER TABLE speed_test_results ENABLE ROW LEVEL SECURITY;
 -- ================================================
 
 -- Public can read active ads
+DROP POLICY IF EXISTS "Public can view active advertisements" ON advertisements;
 CREATE POLICY "Public can view active advertisements"
     ON advertisements
     FOR SELECT
     USING (is_active = true);
 
 -- Authenticated users can do everything
+DROP POLICY IF EXISTS "Authenticated users can manage advertisements" ON advertisements;
 CREATE POLICY "Authenticated users can manage advertisements"
     ON advertisements
     FOR ALL
@@ -119,12 +123,14 @@ CREATE POLICY "Authenticated users can manage advertisements"
 -- ================================================
 
 -- Public can read active servers
+DROP POLICY IF EXISTS "Public can view active servers" ON test_servers;
 CREATE POLICY "Public can view active servers"
     ON test_servers
     FOR SELECT
     USING (is_active = true);
 
 -- Authenticated users can manage all servers
+DROP POLICY IF EXISTS "Authenticated users can manage servers" ON test_servers;
 CREATE POLICY "Authenticated users can manage servers"
     ON test_servers
     FOR ALL
@@ -136,18 +142,21 @@ CREATE POLICY "Authenticated users can manage servers"
 -- ================================================
 
 -- Public can insert test results (anonymous tracking)
+DROP POLICY IF EXISTS "Public can insert test results" ON speed_test_results;
 CREATE POLICY "Public can insert test results"
     ON speed_test_results
     FOR INSERT
     WITH CHECK (true);
 
 -- Public can read all results (for public stats)
+DROP POLICY IF EXISTS "Public can view test results" ON speed_test_results;
 CREATE POLICY "Public can view test results"
     ON speed_test_results
     FOR SELECT
     USING (true);
 
 -- Authenticated users can delete results
+DROP POLICY IF EXISTS "Authenticated users can delete results" ON speed_test_results;
 CREATE POLICY "Authenticated users can delete results"
     ON speed_test_results
     FOR DELETE
