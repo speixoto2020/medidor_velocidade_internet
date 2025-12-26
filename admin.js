@@ -255,7 +255,7 @@ function renderRecentTests(tests) {
     if (!tbody) return;
 
     if (tests.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="loading">Nenhum teste registrado</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="loading">Nenhum teste registrado</td></tr>';
         return;
     }
 
@@ -263,6 +263,11 @@ function renderRecentTests(tests) {
         <tr>
             <td>${new Date(test.created_at).toLocaleString('pt-BR')}</td>
             <td>${test.server_name || 'N/A'}</td>
+            <td>
+                <span title="${test.client_uuid || 'N/A'}" style="font-family: monospace; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">
+                    ${test.client_uuid ? test.client_uuid.substring(0, 8) + '...' : 'Anon'}
+                </span>
+            </td>
             <td>${(test.download_speed || 0).toFixed(2)} Mbps</td>
             <td>${test.upload_speed ? (test.upload_speed).toFixed(2) + ' Mbps' : 'N/A'}</td>
             <td>${(test.ping || 0).toFixed(0)} ms</td>

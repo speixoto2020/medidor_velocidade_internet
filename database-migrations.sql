@@ -59,6 +59,8 @@ CREATE TABLE IF NOT EXISTS speed_test_results (
     ping NUMERIC(10, 2) NOT NULL,
     user_ip TEXT,
     user_agent TEXT,
+    client_isp TEXT,
+    client_uuid UUID,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
