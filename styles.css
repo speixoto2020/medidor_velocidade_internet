@@ -118,6 +118,26 @@ body::before {
 }
 
 /* Main Layout */
+ins.adsbygoogle {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    position: relative;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+}
+
+ins.adsbygoogle::after {
+    content: "Google Ads (Waiting for ID)";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-muted);
+    font-size: 0.8em;
+    font-family: monospace;
+    pointer-events: none;
+}
+
 .main-container {
     display: flex;
     gap: var(--spacing-lg);
