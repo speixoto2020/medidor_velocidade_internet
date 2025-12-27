@@ -710,6 +710,7 @@ async function setupContactModal() {
 
     // Toggle Modal
     btnContact.addEventListener('click', () => {
+        console.log('Contact button clicked');
         modal.classList.add('active');
         txtMessage.focus();
     });
