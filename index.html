@@ -287,6 +287,46 @@
                 </button>
             </div>
         </div>
+
+        <!-- Admin Messages Modal -->
+        <div class="modal-overlay" id="admin-messages-modal" style="z-index: 2002;">
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h2>📨 Mensagens Recebidas</h2>
+                    <button class="btn-close" id="btn-close-admin-messages">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div id="admin-login-screen">
+                        <p>Área restrita. Faça login para continuar.</p>
+                        <input type="email" id="admin-email-input" placeholder="Email" class="input-field"
+                            style="margin-bottom: 10px;">
+                        <input type="password" id="admin-password-input" placeholder="Senha" class="input-field"
+                            style="margin-bottom: 10px;">
+                        <button class="btn-add" id="btn-admin-login">Entrar</button>
+                    </div>
+
+                    <div id="admin-messages-screen" style="display: none;">
+                        <button class="btn-config" id="btn-refresh-messages" style="margin-bottom: 10px;">🔄
+                            Atualizar</button>
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; color: white;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                                        <th style="padding: 8px; text-align: left;">Data</th>
+                                        <th style="padding: 8px; text-align: left;">Mensagem</th>
+                                        <th style="padding: 8px; text-align: left;">Status</th>
+                                        <th style="padding: 8px; text-align: left;">IP</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="messages-table-body">
+                                    <!-- Messages Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="supabase-config.js"></script>

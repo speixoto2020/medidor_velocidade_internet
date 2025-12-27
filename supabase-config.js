@@ -396,6 +396,22 @@ const functionsAPI = {
     }
 };
 
+// ================================================
+// API: Admin (Messages)
+// ================================================
+const adminAPI = {
+    async getMessages() {
+        if (!isSupabaseConfigured()) return { data: [], error: 'Not configured' };
+
+        return await supabase
+            .from('contact_messages')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+    }
+};
+
+
 
 // ================================================
 // Export for use in other files
@@ -407,6 +423,7 @@ if (typeof window !== 'undefined') {
         results: resultsAPI,
         settings: settingsAPI,
         functions: functionsAPI,
+        admin: adminAPI,
         auth: authAPI,
         isConfigured: isSupabaseConfigured
     };

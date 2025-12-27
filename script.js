@@ -948,3 +948,123 @@ function setupScreenshotButton() {
     btnCapture.addEventListener('click', () => captureScreenshot('copy'));
     btnSave.addEventListener('click', () => captureScreenshot('download'));
 }
+
+// ==================== Admin Messages Functionality ====================
+async function setupAdminMessages() {
+    // Check if we already have the button to avoid duplicates
+    const existingBtn = document.getElementById('btn-open-admin-messages');
+    if (existingBtn) return;
+
+    // Add button to Config Modal footer
+    const configModalBody = document.querySelector('#server-modal .modal-body');
+    if (configModalBody) {
+        const divider = document.createElement('hr');
+        divider.style.borderColor = 'rgba(255,255,255,0.1)';
+        divider.style.margin = '20px 0';
+        configModalBody.appendChild(divider);
+
+        const adminBtn = document.createElement('button');
+        adminBtn.id = 'btn-open-admin-messages';
+        adminBtn.textContent = '🔒 Área Admin: Ver Mensagens';
+        adminBtn.className = 'btn-config';
+        adminBtn.style.width = '100%';
+        adminBtn.onclick = openAdminModal;
+        configModalBody.appendChild(adminBtn);
+    }
+
+    const modal = document.getElementById('admin-messages-modal');
+    const btnClose = document.getElementById('btn-close-admin-messages');
+    const loginScreen = document.getElementById('admin-login-screen');
+    const messagesScreen = document.getElementById('admin-messages-screen');
+    const btnLogin = document.getElementById('btn-admin-login');
+    const emailInput = document.getElementById('admin-email-input');
+    const passInput = document.getElementById('admin-password-input');
+    const tableBody = document.getElementById('messages-table-body');
+    const btnRefresh = document.getElementById('btn-refresh-messages');
+
+    function openAdminModal() {
+        modal.classList.add('active');
+        checkSession();
+    }
+
+    if (btnClose) btnClose.onclick = () => modal.classList.remove('active');
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('active');
+    });
+
+    async function checkSession() {
+        // Simple session check
+        const { data: { session } } = await window.supabaseAPI.auth.getSession();
+        if (session) {
+            loadMessages();
+        } else {
+            loginScreen.style.display = 'block';
+            messagesScreen.style.display = 'none';
+        }
+    }
+
+    if (btnLogin) {
+        btnLogin.onclick = async () => {
+            const email = emailInput.value;
+            const password = passInput.value;
+
+            const btnText = btnLogin.textContent;
+            btnLogin.textContent = 'Entrando...';
+            btnLogin.disabled = true;
+
+            try {
+                const { error } = await window.supabaseAPI.auth.signIn(email, password);
+                if (error) throw error;
+                loadMessages();
+            } catch (e) {
+                alert('Login falhou: ' + e.message);
+            } finally {
+                btnLogin.textContent = btnText;
+                btnLogin.disabled = false;
+            }
+        };
+    }
+
+    if (btnRefresh) btnRefresh.onclick = loadMessages;
+
+    async function loadMessages() {
+        loginScreen.style.display = 'none';
+        messagesScreen.style.display = 'block';
+        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">Carregando...</td></tr>';
+
+        const { data, error } = await window.supabaseAPI.admin.getMessages();
+
+        if (error) {
+            console.error('Fetch error:', error);
+            alert('Erro ao carregar mensagens. Verifique se você é admin.');
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">Nenhuma mensagem encontrada.</td></tr>';
+            return;
+        }
+
+        tableBody.innerHTML = data.map(msg => `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <td style="padding: 8px;">${new Date(msg.created_at).toLocaleString()}</td>
+                <td style="padding: 8px;">${msg.sender_message.slice(0, 100)}</td>
+                <td style="padding: 8px;">
+                    <span style="padding: 2px 6px; border-radius: 4px; font-size: 12px;
+                        background: ${msg.status === 'sent' ? '#4CAF50' : msg.status === 'failed' ? '#F44336' : '#FFC107'}">
+                        ${msg.status}
+                    </span>
+                </td>
+                <td style="padding: 8px;">${msg.user_ip || 'N/A'}</td>
+            </tr>
+        `).join('');
+    }
+}
+
+// Call it
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', setupAdminMessages);
+} else {
+    setupAdminMessages();
+}
