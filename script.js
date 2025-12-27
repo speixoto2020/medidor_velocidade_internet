@@ -669,7 +669,63 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Fetch Client Info (ISP + IP)
     fetchClientInfo();
+
+    // Initialize Contact Modal
+    setupContactModal();
 });
+
+// ==================== Contact Admin Functionality ====================
+async function setupContactModal() {
+    const btnContact = document.getElementById('btn-contact-admin');
+    const modal = document.getElementById('contact-modal');
+    const btnClose = document.getElementById('btn-close-contact');
+    const btnSend = document.getElementById('btn-send-contact');
+    const txtMessage = document.getElementById('contact-message');
+    const companyNameEl = document.getElementById('contact-company-name');
+
+    if (!btnContact || !modal) return;
+
+    // Load Settings
+    let adminEmail = 'samuel.peixoton@gmail.com'; // Fallback
+    if (window.supabaseAPI && window.supabaseAPI.isConfigured()) {
+        const email = await window.supabaseAPI.settings.getSetting('admin_email');
+        const company = await window.supabaseAPI.settings.getSetting('company_name');
+
+        if (email) adminEmail = email;
+        if (company && companyNameEl) companyNameEl.textContent = company;
+    }
+
+    // Toggle Modal
+    btnContact.addEventListener('click', () => {
+        modal.classList.add('active');
+        txtMessage.focus();
+    });
+
+    const closeModal = () => modal.classList.remove('active');
+    btnClose.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    // Send Message
+    btnSend.addEventListener('click', () => {
+        const message = txtMessage.value.trim();
+        if (!message) {
+            alert('Por favor, digite uma mensagem.');
+            return;
+        }
+
+        const subject = encodeURIComponent(`Contato via Speed Test - ${new Date().toLocaleString()}`);
+        const body = encodeURIComponent(`${message}\n\n---\nEnviado via App de Teste de Velocidade`);
+        const mailtoLink = `mailto:${adminEmail}?subject=${subject}&body=${body}`;
+
+        window.open(mailtoLink, '_blank');
+
+        // Optional: Clear and close
+        txtMessage.value = '';
+        closeModal();
+    });
+}
 
 // ==================== Supabase Integration ====================
 async function loadAdsFromDatabase() {

@@ -72,6 +72,11 @@
                             ⚙️
                         </button>
 
+                        <button class="btn-config" id="btn-contact-admin" title="Fale com o Admin"
+                            style="background: rgba(255, 255, 255, 0.1);">
+                            ✉️
+                        </button>
+
                         <div class="screenshot-container">
                             <button id="btn-screenshot" class="btn-icon-only" title="Opções de Captura">
                                 📷
@@ -258,6 +263,27 @@
                             📋 Copiar
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Admin Modal -->
+        <div class="modal-overlay" id="contact-modal" style="z-index: 2001;">
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h2>✉️ Fale Conosco</h2>
+                    <button class="btn-close" id="btn-close-contact">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                        Envie uma mensagem para a administração do <span id="contact-company-name">NossaConexão</span>.
+                    </p>
+                    <textarea id="contact-message" placeholder="Digite sua mensagem aqui..."
+                        style="width: 100%; height: 150px; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; resize: vertical; font-family: inherit; margin-bottom: 1rem;"></textarea>
+
+                    <button class="btn-add" id="btn-send-contact" style="width: 100%; justify-content: center;">
+                        🚀 Enviar Mensagem
+                    </button>
                 </div>
             </div>
         </div>

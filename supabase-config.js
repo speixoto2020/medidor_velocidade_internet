@@ -317,6 +317,34 @@ const resultsAPI = {
 };
 
 // ================================================
+// API: App Settings
+// ================================================
+const settingsAPI = {
+    // Get setting by key
+    async getSetting(key) {
+        if (!isSupabaseConfigured()) return null;
+
+        try {
+            const { data, error } = await supabase
+                .from('app_settings')
+                .select('value')
+                .eq('key', key)
+                .single();
+
+            if (error) {
+                // If not found, return null without error
+                if (error.code === 'PGRST116') return null;
+                throw error;
+            }
+            return data ? data.value : null;
+        } catch (error) {
+            console.warn(`Error fetching setting ${key}:`, error);
+            return null;
+        }
+    }
+};
+
+// ================================================
 // API: Authentication
 // ================================================
 const authAPI = {
@@ -366,6 +394,7 @@ if (typeof window !== 'undefined') {
         ads: adsAPI,
         servers: serversAPI,
         results: resultsAPI,
+        settings: settingsAPI,
         auth: authAPI,
         isConfigured: isSupabaseConfigured
     };
