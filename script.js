@@ -671,8 +671,15 @@ window.addEventListener('DOMContentLoaded', () => {
     fetchClientInfo();
 
     // Initialize Contact Modal
-    setupContactModal();
+    // Moved to ensure it runs even if DOMContentLoaded missed
 });
+
+// Ensure Contact Modal is initialized
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', setupContactModal);
+} else {
+    setupContactModal();
+}
 
 // ==================== Contact Admin Functionality ====================
 async function setupContactModal() {
@@ -683,7 +690,13 @@ async function setupContactModal() {
     const txtMessage = document.getElementById('contact-message');
     const companyNameEl = document.getElementById('contact-company-name');
 
-    if (!btnContact || !modal) return;
+    console.log('Initializing Contact Modal...', { btn: !!btnContact, modal: !!modal });
+
+
+    if (!btnContact || !modal) {
+        console.error('Contact modal elements not found!');
+        return;
+    }
 
     // Load Settings
     let adminEmail = 'samuel.peixoton@gmail.com'; // Fallback
