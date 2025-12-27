@@ -36,4 +36,7 @@ GRANT INSERT ON contact_messages TO anon;
 GRANT INSERT ON contact_messages TO authenticated;
 GRANT ALL ON contact_messages TO service_role;
 
-RAISE NOTICE '✅ Table contact_messages created.';
+DO $$
+BEGIN
+    RAISE NOTICE '✅ Table contact_messages created.';
+END $$;
