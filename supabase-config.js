@@ -387,6 +387,17 @@ const authAPI = {
 };
 
 // ================================================
+// API: Edge Functions
+// ================================================
+const functionsAPI = {
+    async invoke(functionName, options) {
+        if (!isSupabaseConfigured()) throw new Error('Supabase not configured');
+        return await supabase.functions.invoke(functionName, options);
+    }
+};
+
+
+// ================================================
 // Export for use in other files
 // ================================================
 if (typeof window !== 'undefined') {
@@ -395,6 +406,7 @@ if (typeof window !== 'undefined') {
         servers: serversAPI,
         results: resultsAPI,
         settings: settingsAPI,
+        functions: functionsAPI,
         auth: authAPI,
         isConfigured: isSupabaseConfigured
     };
