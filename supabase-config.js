@@ -341,6 +341,20 @@ const settingsAPI = {
             console.warn(`Error fetching setting ${key}:`, error);
             return null;
         }
+    },
+
+    // Update setting (admin)
+    async updateSetting(key, value) {
+        if (!isSupabaseConfigured()) throw new Error('Supabase not configured');
+
+        const { data, error } = await supabase
+            .from('app_settings')
+            .upsert({ key, value, updated_at: new Date() })
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
     }
 };
 
