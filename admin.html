@@ -7,33 +7,129 @@
     <title>Admin - NossaConexão Speed Test</title>
     <link rel="stylesheet" href="styles.css">
     <style>
+        :root {
+            --bg-dark: #1a1a2e;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --text-main: #ffffff;
+            --text-muted: #a6b1e1;
+        }
+
         body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #16213e 100%);
+            color: var(--text-main);
             font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
             min-height: 100vh;
-            padding: 20px;
         }
 
-        .admin-container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.05);
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
         }
 
-        h1 {
-            margin-bottom: 20px;
-            color: #a6b1e1;
+        .sidebar-brand {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-logout {
+            margin-top: auto;
+            color: #ff8a80;
+        }
+
+        .nav-logout:hover {
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* Login Screen */
+        #login-section {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-dark);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .login-box {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 12px;
+            width: 100%;
             max-width: 400px;
-            margin: 50px auto;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             text-align: center;
+        }
+
+        /* Components */
+        .btn-primary,
+        .btn-secondary,
+        .btn-danger {
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-danger {
+            background: rgba(244, 67, 54, 0.8);
         }
 
         .input-field {
@@ -44,24 +140,10 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 6px;
             color: white;
+            box-sizing: border-box;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            padding: 12px 24px;
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: bold;
-            transition: transform 0.2s;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-        }
-
+        /* Tables & Lists */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -72,12 +154,29 @@
         td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         th {
-            color: #a6b1e1;
+            color: var(--text-muted);
             font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
 
         .status-badge {
@@ -95,58 +194,117 @@
             background: rgba(244, 67, 54, 0.2);
             color: #ff8a80;
         }
-
-        .refresh-btn {
-            margin-bottom: 20px;
-            width: auto;
-            display: inline-block;
-        }
     </style>
 </head>
 
 <body>
 
-    <div class="admin-container">
-        <h1>🛠️ Painel Administrativo</h1>
-
-        <div id="login-section">
-            <div class="login-box">
-                <h2>Login</h2>
-                <input type="email" id="email" class="input-field" placeholder="Email">
-                <input type="password" id="password" class="input-field" placeholder="Senha">
-                <button id="btn-login" class="btn-primary">Entrar</button>
-            </div>
-        </div>
-
-        <div id="dashboard-section" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <button id="btn-refresh" class="btn-primary refresh-btn">🔄 Atualizar Mensagens</button>
-                <button id="btn-logout" class="btn-primary refresh-btn"
-                    style="background: rgba(255,0,0,0.2);">Sair</button>
-            </div>
-
-            <div style="overflow-x: auto;">
-                <table id="messages-table">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Mensagem</th>
-                            <th>Status</th>
-                            <th>IP</th>
-                        </tr>
-                    </thead>
-                    <tbody id="messages-body">
-                        <!-- Messages here -->
-                    </tbody>
-                </table>
-            </div>
+    <!-- LOGIN OVERLAY -->
+    <div id="login-section">
+        <div class="login-box">
+            <h2 style="margin-bottom: 20px;">Admin Login</h2>
+            <input type="email" id="email" class="input-field" placeholder="Email">
+            <input type="password" id="password" class="input-field" placeholder="Senha">
+            <button id="btn-login" class="btn-primary" style="width: 100%;">Entrar</button>
         </div>
     </div>
 
-    <!-- Supabase CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-brand">⚡ Admin Panel</div>
+        <div class="nav-item active" data-tab="messages">📨 Mensagens</div>
+        <div class="nav-item" data-tab="settings">⚙️ Configurações</div>
+        <div class="nav-item" data-tab="servers">🌐 Servidores</div>
+        <div class="nav-item" data-tab="ads">📢 Anúncios</div>
+        <div class="nav-item nav-logout" id="btn-logout">🚪 Sair</div>
+    </div>
 
-    <!-- Reusing existing config logic -->
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+
+        <!-- Tab: MESSAGES -->
+        <div id="tab-messages" class="tab-pane active">
+            <div class="header-actions">
+                <h1>Mensagens Recebidas</h1>
+                <button id="btn-refresh-messages" class="btn-secondary">🔄 Atualizar</button>
+            </div>
+            <table id="messages-table">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Mensagem</th>
+                        <th>Status</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody id="messages-body">
+                    <!-- Javascript populates this -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab: SETTINGS -->
+        <div id="tab-settings" class="tab-pane">
+            <h1>Configurações Gerais</h1>
+            <div style="background: var(--bg-card); padding: 20px; border-radius: 12px; max-width: 600px;">
+                <label style="display: block; margin-bottom: 8px; color: var(--text-muted);">Nome da Empresa</label>
+                <input type="text" id="conf-company-name" class="input-field" placeholder="Ex: NossaConexão">
+
+                <label style="display: block; margin-bottom: 8px; color: var(--text-muted);">Email do Admin (Destino
+                    Formulário)</label>
+                <input type="email" id="conf-admin-email" class="input-field" placeholder="Ex: admin@example.com">
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button id="btn-save-settings" class="btn-primary">💾 Salvar Alterações</button>
+                    <button id="btn-test-email" class="btn-secondary">✉️ Testar Envio de Email</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: SERVERS -->
+        <div id="tab-servers" class="tab-pane">
+            <div class="header-actions">
+                <h1>Servidores de Teste</h1>
+                <button id="btn-add-server-modal" class="btn-primary">+ Novo Servidor</button>
+            </div>
+            <table id="servers-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>URL ID</th>
+                        <th>Padrão</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="servers-body">
+                    <!-- Javascript populates this -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tab: ADS -->
+        <div id="tab-ads" class="tab-pane">
+            <div class="header-actions">
+                <h1>Anúncios / Banners</h1>
+                <button id="btn-add-ad-modal" class="btn-primary">+ Novo Anúncio</button>
+            </div>
+            <table id="ads-table">
+                <thead>
+                    <tr>
+                        <th>Título</th>
+                        <th>Posição</th>
+                        <th>Link</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="ads-body"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- Supabase & Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="supabase-config.js"></script>
     <script type="module" src="admin.js"></script>
 </body>
