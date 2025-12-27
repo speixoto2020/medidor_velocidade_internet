@@ -447,19 +447,39 @@ ins.adsbygoogle::after {
 }
 
 /* Modal */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
-    display: none;
-    align-items: center;
+.metrics-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
     justify-content: center;
-    z-index: 1000;
-    animation: fadeIn 0.3s ease;
+}
+
+.metric-item {
+    background: var(--bg-glass);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex: 1 1 150px;
+    /* Allow wrapping */
+    min-width: 140px;
+}
+
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(0, 0, 0, 0.8);
+backdrop-filter: blur(10px);
+display: none;
+align-items: center;
+justify-content: center;
+z-index: 1000;
+animation: fadeIn 0.3s ease;
 }
 
 .modal-overlay.active {

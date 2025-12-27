@@ -167,8 +167,10 @@ function hideProgress() {
 // ==================== Speed Test Functions ====================
 async function measurePing(url) {
     const measurements = [];
+    let failedPings = 0;
+    const totalPings = 10; // Increased for better accuracy
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < totalPings; i++) {
         const startTime = performance.now();
         try {
             await fetch(url + '?t=' + Date.now(), {
@@ -180,13 +182,38 @@ async function measurePing(url) {
             measurements.push(endTime - startTime);
         } catch (error) {
             console.warn('Ping measurement failed:', error);
+            failedPings++;
         }
+
+        // Small delay between pings
+        await new Promise(resolve => setTimeout(resolve, 50));
     }
 
-    if (measurements.length === 0) return 0;
+    if (measurements.length === 0) return { ping: 0, jitter: 0, loss: 100 };
 
-    // Return average ping
-    return measurements.reduce((a, b) => a + b, 0) / measurements.length;
+    // 1. Calculate Average Ping
+    const avgPing = measurements.reduce((a, b) => a + b, 0) / measurements.length;
+
+    // 2. Calculate Jitter (Average Deviation)
+    // Jitter = Sum(|Sample - PreviousSample|) / (Count - 1)
+    let jitterSum = 0;
+    if (measurements.length > 1) {
+        for (let i = 0; i < measurements.length - 1; i++) {
+            jitterSum += Math.abs(measurements[i] - measurements[i + 1]);
+        }
+        var jitter = jitterSum / (measurements.length - 1);
+    } else {
+        var jitter = 0;
+    }
+
+    // 3. Calculate Packet Loss
+    const packetLoss = (failedPings / totalPings) * 100;
+
+    return {
+        ping: avgPing,
+        jitter: jitter,
+        loss: packetLoss
+    };
 }
 
 async function measureDownloadSpeed(urls) {
@@ -381,6 +408,12 @@ async function runSpeedTest() {
     elements.downloadSpeed.textContent = '-- Mbps';
     elements.uploadSpeed.textContent = '-- Mbps';
     elements.pingValue.textContent = '-- ms';
+
+    const jitterEl = document.getElementById('jitter-value');
+    const lossEl = document.getElementById('loss-value');
+    if (jitterEl) jitterEl.textContent = '-- ms';
+    if (lossEl) lossEl.textContent = '-- %';
+
     updateGauge(0);
 
 
@@ -397,8 +430,16 @@ async function runSpeedTest() {
         setVisState('pinging');
         elements.gaugeLabel.textContent = 'Medindo latência...';
         updateProgress(10);
-        results.ping = await measurePing(currentServer.pingUrl);
+
+        const pingResults = await measurePing(currentServer.pingUrl);
+        results.ping = pingResults.ping;
+        results.jitter = pingResults.jitter;
+        results.loss = pingResults.loss;
+
         elements.pingValue.textContent = results.ping.toFixed(0) + ' ms';
+        if (jitterEl) jitterEl.textContent = results.jitter.toFixed(0) + ' ms';
+        if (lossEl) lossEl.textContent = results.loss.toFixed(0) + ' %';
+
         updateProgress(25);
 
         // Step 2: Download Test
@@ -441,6 +482,8 @@ async function runSpeedTest() {
                     download_speed: parseFloat(formatSpeed(results.download)),
                     upload_speed: results.upload > 0 ? parseFloat(formatSpeed(results.upload)) : null,
                     ping: results.ping,
+                    jitter: results.jitter,
+                    packet_loss: results.loss,
                     user_agent: navigator.userAgent,
                     client_ip: clientIp !== '...' ? clientIp : null,
                     client_isp: clientIsp !== 'Detectando provedor...' ? clientIsp : null,
@@ -740,11 +783,6 @@ async function setupContactModal() {
 
     // Send Message - SERVER SIDE LOGIC
     if (btnSend) {
-        // Remove old listeners by cloning (simple trick) or just overwriting property if we use onclick. 
-        // We will use onclick to be 100% sure we replace previous listeners if they were attached via onclick, 
-        // but since they were addEventListener, cloning is safer, OR just preventing multiple adds.
-        // For this fix, let's just assume we are the only one attaching now because we overwrote the file.
-
         btnSend.onclick = async () => {
             const message = txtMessage.value.trim();
             if (!message) {
