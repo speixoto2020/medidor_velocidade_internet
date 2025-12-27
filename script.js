@@ -670,19 +670,42 @@ window.addEventListener('DOMContentLoaded', () => {
     // Fetch Client Info (ISP + IP)
     fetchClientInfo();
 
-    // Initialize Contact Modal
-    // Moved to ensure it runs even if DOMContentLoaded missed
+    // Initialize Contact Modal and Admin Messages Button
+    // We call setupContactModal here to ensure listeners are attached
 });
 
-// Ensure Contact Modal is initialized
+// Ensure Contact Modal is initialized safely
 if (document.readyState === 'loading') {
     window.addEventListener('DOMContentLoaded', setupContactModal);
 } else {
+    // If we are already loaded, we can call it, but listener in DOMContentLoaded above handles it.
+    // However, to be safe against race conditions:
     setupContactModal();
 }
 
 // ==================== Contact Admin Functionality ====================
 async function setupContactModal() {
+    // 1. Setup Admin Button if it doesn't exist
+    const existingBtn = document.getElementById('btn-open-admin-messages');
+    if (!existingBtn) {
+        const configModalBody = document.querySelector('#server-modal .modal-body');
+        if (configModalBody) {
+            const divider = document.createElement('hr');
+            divider.style.borderColor = 'rgba(255,255,255,0.1)';
+            divider.style.margin = '20px 0';
+            configModalBody.appendChild(divider);
+
+            const adminBtn = document.createElement('button');
+            adminBtn.id = 'btn-open-admin-messages';
+            adminBtn.textContent = '🔒 Área Admin: Ver Mensagens';
+            adminBtn.className = 'btn-config';
+            adminBtn.style.width = '100%';
+            adminBtn.onclick = () => window.location.href = 'admin.html'; // Direct link to new page
+            configModalBody.appendChild(adminBtn);
+        }
+    }
+
+    // 2. Setup Contact Modal Logic
     const btnContact = document.getElementById('btn-contact-admin');
     const modal = document.getElementById('contact-modal');
     const btnClose = document.getElementById('btn-close-contact');
@@ -690,16 +713,10 @@ async function setupContactModal() {
     const txtMessage = document.getElementById('contact-message');
     const companyNameEl = document.getElementById('contact-company-name');
 
-    console.log('Initializing Contact Modal...', { btn: !!btnContact, modal: !!modal });
-
-
-    if (!btnContact || !modal) {
-        console.error('Contact modal elements not found!');
-        return;
-    }
+    if (!btnContact || !modal) return;
 
     // Load Settings
-    let adminEmail = 'samuel.peixoton@gmail.com'; // Fallback
+    let adminEmail = 'samuel.peixoton@gmail.com';
     if (window.supabaseAPI && window.supabaseAPI.isConfigured()) {
         const email = await window.supabaseAPI.settings.getSetting('admin_email');
         const company = await window.supabaseAPI.settings.getSetting('company_name');
@@ -709,36 +726,75 @@ async function setupContactModal() {
     }
 
     // Toggle Modal
-    btnContact.addEventListener('click', () => {
-        console.log('Contact button clicked');
+    btnContact.onclick = () => {
         modal.classList.add('active');
         txtMessage.focus();
-    });
+    };
 
-    const closeModal = () => modal.classList.remove('active');
-    btnClose.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-    });
+    const closeModalFn = () => modal.classList.remove('active');
+    if (btnClose) btnClose.onclick = closeModalFn;
 
-    // Send Message
-    btnSend.addEventListener('click', () => {
-        const message = txtMessage.value.trim();
-        if (!message) {
-            alert('Por favor, digite uma mensagem.');
-            return;
-        }
+    modal.onclick = (e) => {
+        if (e.target === modal) closeModalFn();
+    };
 
-        const subject = encodeURIComponent(`Contato via Speed Test - ${new Date().toLocaleString()}`);
-        const body = encodeURIComponent(`${message}\n\n---\nEnviado via App de Teste de Velocidade`);
-        const mailtoLink = `mailto:${adminEmail}?subject=${subject}&body=${body}`;
+    // Send Message - SERVER SIDE LOGIC
+    if (btnSend) {
+        // Remove old listeners by cloning (simple trick) or just overwriting property if we use onclick. 
+        // We will use onclick to be 100% sure we replace previous listeners if they were attached via onclick, 
+        // but since they were addEventListener, cloning is safer, OR just preventing multiple adds.
+        // For this fix, let's just assume we are the only one attaching now because we overwrote the file.
 
-        window.open(mailtoLink, '_blank');
+        btnSend.onclick = async () => {
+            const message = txtMessage.value.trim();
+            if (!message) {
+                alert('Por favor, digite uma mensagem.');
+                return;
+            }
 
-        // Optional: Clear and close
-        txtMessage.value = '';
-        closeModal();
-    });
+            // Loading State
+            const originalText = btnSend.textContent;
+            btnSend.disabled = true;
+            btnSend.textContent = 'Enviando...';
+
+            try {
+                // Check if Supabase is available
+                if (!window.supabaseAPI || !window.supabaseAPI.isConfigured()) {
+                    throw new Error('Supabase configuration missing');
+                }
+
+                const { data, error } = await window.supabaseAPI.functions.invoke('send-contact-email', {
+                    body: {
+                        message,
+                        clientInfo: {
+                            ip: document.getElementById('client-ip')?.textContent || 'Unknown',
+                            isp: document.getElementById('client-isp')?.textContent || 'Unknown'
+                        }
+                    }
+                });
+
+                if (error) throw error;
+
+                alert('Mensagem enviada com sucesso!');
+                txtMessage.value = '';
+                closeModalFn();
+
+            } catch (error) {
+                console.error('Backend send failed:', error);
+
+                // Alert user regarding the error
+                if (confirm(`Erro ao enviar pelo servidor: ${error.message || error}.\nDeseja abrir o seu cliente de email?`)) {
+                    const subject = encodeURIComponent(`Contato via Speed Test - ${new Date().toLocaleString()}`);
+                    const body = encodeURIComponent(`${message}\n\n---\nEnviado via App de Teste de Velocidade`);
+                    const mailtoLink = `mailto:${adminEmail}?subject=${subject}&body=${body}`;
+                    window.open(mailtoLink, '_blank');
+                }
+            } finally {
+                btnSend.disabled = false;
+                btnSend.textContent = originalText;
+            }
+        };
+    }
 }
 
 // ==================== Supabase Integration ====================
@@ -947,124 +1003,4 @@ function setupScreenshotButton() {
     // Connect Menu Buttons
     btnCapture.addEventListener('click', () => captureScreenshot('copy'));
     btnSave.addEventListener('click', () => captureScreenshot('download'));
-}
-
-// ==================== Admin Messages Functionality ====================
-async function setupAdminMessages() {
-    // Check if we already have the button to avoid duplicates
-    const existingBtn = document.getElementById('btn-open-admin-messages');
-    if (existingBtn) return;
-
-    // Add button to Config Modal footer
-    const configModalBody = document.querySelector('#server-modal .modal-body');
-    if (configModalBody) {
-        const divider = document.createElement('hr');
-        divider.style.borderColor = 'rgba(255,255,255,0.1)';
-        divider.style.margin = '20px 0';
-        configModalBody.appendChild(divider);
-
-        const adminBtn = document.createElement('button');
-        adminBtn.id = 'btn-open-admin-messages';
-        adminBtn.textContent = '🔒 Área Admin: Ver Mensagens';
-        adminBtn.className = 'btn-config';
-        adminBtn.style.width = '100%';
-        adminBtn.onclick = openAdminModal;
-        configModalBody.appendChild(adminBtn);
-    }
-
-    const modal = document.getElementById('admin-messages-modal');
-    const btnClose = document.getElementById('btn-close-admin-messages');
-    const loginScreen = document.getElementById('admin-login-screen');
-    const messagesScreen = document.getElementById('admin-messages-screen');
-    const btnLogin = document.getElementById('btn-admin-login');
-    const emailInput = document.getElementById('admin-email-input');
-    const passInput = document.getElementById('admin-password-input');
-    const tableBody = document.getElementById('messages-table-body');
-    const btnRefresh = document.getElementById('btn-refresh-messages');
-
-    function openAdminModal() {
-        modal.classList.add('active');
-        checkSession();
-    }
-
-    if (btnClose) btnClose.onclick = () => modal.classList.remove('active');
-
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.remove('active');
-    });
-
-    async function checkSession() {
-        // Simple session check
-        const { data: { session } } = await window.supabaseAPI.auth.getSession();
-        if (session) {
-            loadMessages();
-        } else {
-            loginScreen.style.display = 'block';
-            messagesScreen.style.display = 'none';
-        }
-    }
-
-    if (btnLogin) {
-        btnLogin.onclick = async () => {
-            const email = emailInput.value;
-            const password = passInput.value;
-
-            const btnText = btnLogin.textContent;
-            btnLogin.textContent = 'Entrando...';
-            btnLogin.disabled = true;
-
-            try {
-                const { error } = await window.supabaseAPI.auth.signIn(email, password);
-                if (error) throw error;
-                loadMessages();
-            } catch (e) {
-                alert('Login falhou: ' + e.message);
-            } finally {
-                btnLogin.textContent = btnText;
-                btnLogin.disabled = false;
-            }
-        };
-    }
-
-    if (btnRefresh) btnRefresh.onclick = loadMessages;
-
-    async function loadMessages() {
-        loginScreen.style.display = 'none';
-        messagesScreen.style.display = 'block';
-        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">Carregando...</td></tr>';
-
-        const { data, error } = await window.supabaseAPI.admin.getMessages();
-
-        if (error) {
-            console.error('Fetch error:', error);
-            alert('Erro ao carregar mensagens. Verifique se você é admin.');
-            return;
-        }
-
-        if (!data || data.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">Nenhuma mensagem encontrada.</td></tr>';
-            return;
-        }
-
-        tableBody.innerHTML = data.map(msg => `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                <td style="padding: 8px;">${new Date(msg.created_at).toLocaleString()}</td>
-                <td style="padding: 8px;">${msg.sender_message.slice(0, 100)}</td>
-                <td style="padding: 8px;">
-                    <span style="padding: 2px 6px; border-radius: 4px; font-size: 12px;
-                        background: ${msg.status === 'sent' ? '#4CAF50' : msg.status === 'failed' ? '#F44336' : '#FFC107'}">
-                        ${msg.status}
-                    </span>
-                </td>
-                <td style="padding: 8px;">${msg.user_ip || 'N/A'}</td>
-            </tr>
-        `).join('');
-    }
-}
-
-// Call it
-if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', setupAdminMessages);
-} else {
-    setupAdminMessages();
 }
